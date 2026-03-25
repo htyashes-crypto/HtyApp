@@ -1,0 +1,26 @@
+[package]
+name = "hty_skill_manager"
+version = "0.1.0"
+description = "Hty Skill Manager"
+authors = ["OpenAI"]
+edition = "2021"
+
+[lib]
+name = "hty_skill_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.2", features = [] }
+
+[dependencies]
+anyhow = "1.0.95"
+chrono = { version = "0.4.39", features = ["serde"] }
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+sanitize-filename = "0.5.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.135"
+tauri = { version = "2.1.1", features = [] }
+tauri-plugin-dialog = "2.2.0"
+uuid = { version = "1.11.0", features = ["serde", "v4"] }
+walkdir = "2.5.0"
+zip = { version = "2.2.2", default-features = false, features = ["deflate"] }

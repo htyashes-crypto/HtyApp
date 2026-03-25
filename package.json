@@ -1,0 +1,41 @@
+{
+  "name": "hty-skill-manager",
+  "private": true,
+  "version": "0.1.0",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/electron-dev.mjs",
+    "dev:renderer": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "electron electron/main.cjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.66.0",
+    "clsx": "^2.1.1",
+    "diff": "^8.0.4",
+    "electron": "^38.0.0",
+    "framer-motion": "^12.4.2",
+    "i18next": "^25.10.9",
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^16.6.6",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/diff": "^7.0.2",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.4",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Hty: Electron Dev",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+        "program": "${workspaceFolder}\\scripts\\electron-dev.mjs",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "skipFiles": ["<node_internals>/**"]
+      },
+      {
+        "name": "Hty: Renderer Dev",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+        "program": "${workspaceFolder}\\node_modules\\vite\\bin\\vite.js",
+        "args": ["--host", "127.0.0.1", "--port", "1420", "--strictPort"],
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "skipFiles": ["<node_internals>/**"]
+      },
+      {
+        "name": "Hty: Electron Start",
+        "type": "node-terminal",
+        "request": "launch",
+        "command": "& 'C:\\Program Files\\nodejs\\npm.cmd' run start"
+      }
+    ]
+  }
+}

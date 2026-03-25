@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "hty: electron dev",
+      "type": "shell",
+      "command": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\run-electron-dev.ps1"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "hty: renderer dev",
+      "type": "shell",
+      "command": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\run-vite-dev.ps1"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "hty: electron start",
+      "type": "shell",
+      "command": "C:\\Program Files\\nodejs\\npm.cmd",
+      "args": ["run", "start"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "hty: frontend test",
+      "type": "shell",
+      "command": "C:\\Program Files\\nodejs\\npm.cmd",
+      "args": ["run", "test"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "hty: frontend build",
+      "type": "shell",
+      "command": "C:\\Program Files\\nodejs\\npm.cmd",
+      "args": ["run", "build"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
