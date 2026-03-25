@@ -1,7 +1,7 @@
 {
   "name": "hty-skill-manager",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "HtyApp - Skill Manager & Project Sync Tool",
   "author": "htyashes-crypto",
   "main": "electron/main.cjs",
@@ -28,7 +28,8 @@
       "package.json"
     ],
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "build/htyapp-icon.ico"
     },
     "nsis": {
       "oneClick": false,

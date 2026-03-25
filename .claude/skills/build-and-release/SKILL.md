@@ -70,6 +70,15 @@ curl -s -X PATCH -H "Authorization: token $GH_TOKEN" -H "Content-Type: applicati
 | icon must be 256x256 | 移除 build.win.icon 配置或替换为合规图标 |
 | Release 为 Draft | 通过 API 自动发布 |
 | 404 / No published versions | 确认仓库为 Public，确认 Release 非 Draft |
+| 旧版本更新检查 404 latest.yml | Release 中缺少 `latest.yml`。重新执行 `npm run dist`（需设置 GH_TOKEN）即可重新上传所有 artifacts（包括 `latest.yml`）。上传后 GitHub CDN 可能需要几分钟缓存传播 |
+| 旧版本下载 exe 404 | 通过 GitHub API 确认 release 非 Draft 且 assets 状态为 `uploaded`。如果 API 显示正常但仍 404，等待 CDN 缓存传播即可 |
+
+## 注意事项
+
+- `electron-builder --publish always` 会同时上传安装包和 `latest.yml`，缺少 `latest.yml` 会导致旧版本无法检测更新
+- 如果手动在 GitHub 上创建 Release 或只上传了 exe，必须确保 `latest.yml` 也作为 asset 上传
+- 重新执行 `npm run dist` 会自动覆盖已存在的同名 assets（日志会显示 `overwrite published file`）
+- 发布完成后建议通过 GitHub API 验证所有 assets（exe、exe.blockmap、latest.yml）都已正确上传
 
 ## 关键文件
 
