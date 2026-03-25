@@ -163,15 +163,14 @@ function SkillApp() {
   }, [selectedInstanceId, workspaceSnapshotQuery.data]);
 
   const bindMutation = useMutation({
-    mutationFn: async ({ skillId, version }: { skillId: string; version: string }) => {
+    mutationFn: async ({ skillId }: { skillId: string }) => {
       if (!selectedWorkspace || !selectedInstance) {
         return null;
       }
       return api.bindLocalInstance({
         workspaceRoot: selectedWorkspace.rootPath,
         instanceId: selectedInstance.instanceId,
-        skillId,
-        version
+        skillId
       });
     },
     onSuccess: async () => {
@@ -282,6 +281,34 @@ function SkillApp() {
     return response.message;
   };
 
+  const handleRollbackInstance = async (instanceId: string, targetVersion: string) => {
+    if (!selectedWorkspace) {
+      return;
+    }
+
+    const { autoApprove } = useUiStore.getState();
+
+    const preview = await api.prepareUpdateMerge({
+      workspaceRoot: selectedWorkspace.rootPath,
+      instanceId,
+      targetVersion,
+      force: !autoApprove
+    });
+
+    if (preview.action === "noop") {
+      return preview.message;
+    }
+
+    if (preview.action === "needs_resolution" || !autoApprove) {
+      setMergeSession(preview);
+      return;
+    }
+
+    const response = await api.commitMergeSession({ sessionId: preview.sessionId });
+    await invalidateCoreQueries();
+    return response.message;
+  };
+
   const handleImportPackage = async () => {
     const packagePath = await pickImportPackagePath();
     if (!packagePath) {
@@ -349,8 +376,9 @@ function SkillApp() {
             selectedSkillId={selectedSkillId}
             onSelectSkillId={setSelectedSkillId}
             selectedSkillDetail={selectedSkillDetailQuery.data ?? null}
-            onBind={(skillId, version) => bindMutation.mutateAsync({ skillId, version }).then(() => undefined)}
+            onBind={(skillId) => bindMutation.mutateAsync({ skillId }).then(() => undefined)}
             onUpdateBoundInstance={handleUpdateBoundInstance}
+            onRollbackInstance={handleRollbackInstance}
           />
         );
       case "activity":

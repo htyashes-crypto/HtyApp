@@ -10,13 +10,23 @@ interface OverviewPageProps {
   workspaces: WorkspaceRecord[];
 }
 
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+} as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+};
+
 export function OverviewPage({ dashboard, library, workspaces }: OverviewPageProps) {
   const { t } = useTranslation();
   const featured = library.slice(0, 3);
 
   return (
-    <motion.div className="page page--stack" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <section className="hero-card">
+    <motion.div className="page page--stack" variants={stagger} initial="hidden" animate="visible">
+      <motion.section className="hero-card" variants={fadeUp}>
         <div>
           <span className="eyebrow">{t("overview.heroEyebrow")}</span>
           <h2>{t("overview.heroTitle")}</h2>
@@ -27,32 +37,32 @@ export function OverviewPage({ dashboard, library, workspaces }: OverviewPagePro
           <strong>{t("overview.defaultUpload")}</strong>
           <strong>{t("overview.defaultUpdate")}</strong>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="stats-grid">
-        <article className="stat-card">
+      <motion.section className="stats-grid" variants={fadeUp}>
+        <article className="stat-card stat-card--accent-a">
           <span>{t("overview.logicSkill")}</span>
           <strong>{dashboard?.globalSkillCount ?? 0}</strong>
           <p>{t("overview.logicSkillDesc")}</p>
         </article>
-        <article className="stat-card">
+        <article className="stat-card stat-card--accent-b">
           <span>{t("overview.globalVersion")}</span>
           <strong>{dashboard?.versionCount ?? 0}</strong>
           <p>{t("overview.globalVersionDesc")}</p>
         </article>
-        <article className="stat-card">
+        <article className="stat-card stat-card--accent-c">
           <span>{t("overview.workspace")}</span>
           <strong>{dashboard?.workspaceCount ?? 0}</strong>
           <p>{t("overview.workspaceDesc")}</p>
         </article>
-        <article className="stat-card">
+        <article className="stat-card stat-card--accent-d">
           <span>{t("overview.unboundInstance")}</span>
           <strong>{dashboard?.unboundInstanceCount ?? 0}</strong>
           <p>{t("overview.unboundInstanceDesc")}</p>
         </article>
-      </section>
+      </motion.section>
 
-      <section className="content-grid content-grid--overview">
+      <motion.section className="content-grid content-grid--overview" variants={fadeUp}>
         <div className="panel">
           <div className="panel__header">
             <div>
@@ -62,7 +72,7 @@ export function OverviewPage({ dashboard, library, workspaces }: OverviewPagePro
           </div>
           <div className="stack-list">
             {featured.map((skill) => (
-              <article key={skill.skillId} className="list-card">
+              <article key={skill.skillId} className="list-card list-card--hoverable">
                 <div>
                   <h4>{skill.name}</h4>
                   <p>{skill.description}</p>
@@ -83,7 +93,7 @@ export function OverviewPage({ dashboard, library, workspaces }: OverviewPagePro
               <p>{t("overview.activityDesc")}</p>
             </div>
           </div>
-          <div className="timeline-list">
+          <div className="timeline-list timeline-list--connected">
             {dashboard?.recentActivities.map((activity) => (
               <article key={activity.id} className="timeline-item">
                 <div className="timeline-item__marker" />
@@ -106,7 +116,7 @@ export function OverviewPage({ dashboard, library, workspaces }: OverviewPagePro
           </div>
           <div className="stack-list">
             {workspaces.map((workspace) => (
-              <article key={workspace.workspaceId} className="workspace-card">
+              <article key={workspace.workspaceId} className="workspace-card workspace-card--hoverable">
                 <strong>{workspace.kind === "special" ? `${workspace.name} · ${t("overview.special")}` : workspace.name}</strong>
                 <span>
                   {workspace.kind === "special"
@@ -119,7 +129,7 @@ export function OverviewPage({ dashboard, library, workspaces }: OverviewPagePro
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
     </motion.div>
   );
 }

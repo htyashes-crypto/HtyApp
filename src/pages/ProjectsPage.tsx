@@ -29,8 +29,9 @@ interface ProjectsPageProps {
   selectedSkillId: string | null;
   onSelectSkillId: (skillId: string) => void;
   selectedSkillDetail: GlobalSkillDetail | null;
-  onBind: (skillId: string, version: string) => Promise<void>;
+  onBind: (skillId: string) => Promise<void>;
   onUpdateBoundInstance: (instanceId: string) => Promise<string | void>;
+  onRollbackInstance: (instanceId: string, targetVersion: string) => Promise<string | void>;
 }
 
 export function ProjectsPage({
@@ -50,11 +51,13 @@ export function ProjectsPage({
   onSelectSkillId,
   selectedSkillDetail,
   onBind,
-  onUpdateBoundInstance
+  onUpdateBoundInstance,
+  onRollbackInstance
 }: ProjectsPageProps) {
   const { t } = useTranslation();
-  const [bindVersion, setBindVersion] = useState<string>("");
   const [binding, setBinding] = useState(false);
+  const [rollbackVersion, setRollbackVersion] = useState<string>("");
+  const [rollingBack, setRollingBack] = useState(false);
   const [updatingInstanceId, setUpdatingInstanceId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -98,67 +101,60 @@ export function ProjectsPage({
       : t("overview.noProvider")
     : t("projects.indexPath");
 
-  const occupiedVersions = useMemo(() => {
-    const occupied = new Set<string>();
-    if (!snapshot || !selectedSkillId) {
-      return occupied;
-    }
-
-    snapshot.instances.forEach((instance) => {
-      if (
-        instance.instanceId !== selectedInstance?.instanceId &&
-        instance.provider === selectedInstance?.provider &&
-        instance.linkedSkillId === selectedSkillId &&
-        instance.linkedVersion
-      ) {
-        occupied.add(instance.linkedVersion);
-      }
-    });
-
-    return occupied;
-  }, [selectedInstance?.instanceId, selectedSkillId, snapshot]);
-
-  const bindableVersions = useMemo(() => {
-    return (selectedSkillDetail?.versions ?? []).filter((version) => {
-      const isCurrentBinding =
-        selectedInstance?.linkedSkillId === selectedSkillId &&
-        selectedInstance?.linkedVersion === version.version;
-      return isCurrentBinding || !occupiedVersions.has(version.version);
-    });
-  }, [occupiedVersions, selectedInstance?.linkedSkillId, selectedInstance?.linkedVersion, selectedSkillDetail, selectedSkillId]);
-
-  useEffect(() => {
-    if (!bindableVersions.length) {
-      setBindVersion("");
-      return;
-    }
-
-    setBindVersion((current) =>
-      bindableVersions.some((version) => version.version === current)
-        ? current
-        : bindableVersions[0].version
-    );
-  }, [bindableVersions]);
-
   useEffect(() => {
     setActionError(null);
     setActionNotice(null);
-  }, [bindVersion, selectedInstance?.instanceId, selectedSkillId]);
+  }, [selectedInstance?.instanceId, selectedSkillId]);
+
+  const selectedSkillName = library.find((s) => s.skillId === selectedSkillId)?.name;
 
   const handleBind = async () => {
-    if (!selectedInstance || !selectedSkillId || !bindVersion) {
+    if (!selectedInstance || !selectedSkillId) {
       return;
     }
     setBinding(true);
     setActionError(null);
     setActionNotice(null);
     try {
-      await onBind(selectedSkillId, bindVersion);
-      setActionNotice(t("projects.successBind", { name: selectedInstance.displayName, version: bindVersion }));
+      await onBind(selectedSkillId);
+      setActionNotice(t("projects.successBind", { name: selectedInstance.displayName, skill: selectedSkillName || selectedSkillId }));
     } catch (error) {
       setActionError(error instanceof Error ? error.message : t("projects.bindFailed"));
     } finally {
       setBinding(false);
+    }
+  };
+
+  const rollbackVersions = useMemo(() => {
+    if (!selectedInstance?.linkedSkillId || !selectedSkillDetail) return [];
+    if (selectedSkillDetail.skill.skillId !== selectedInstance.linkedSkillId) return [];
+    return selectedSkillDetail.versions;
+  }, [selectedInstance?.linkedSkillId, selectedSkillDetail]);
+
+  useEffect(() => {
+    if (!rollbackVersions.length) {
+      setRollbackVersion("");
+      return;
+    }
+    setRollbackVersion((current) =>
+      rollbackVersions.some((v) => v.version === current) ? current : rollbackVersions[0].version
+    );
+  }, [rollbackVersions]);
+
+  const handleRollback = async () => {
+    if (!selectedInstance || !rollbackVersion) return;
+    setRollingBack(true);
+    setActionError(null);
+    setActionNotice(null);
+    try {
+      const message = await onRollbackInstance(selectedInstance.instanceId, rollbackVersion);
+      if (message) {
+        setActionNotice(message);
+      }
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : t("projects.updateFailed"));
+    } finally {
+      setRollingBack(false);
     }
   };
 
@@ -171,7 +167,7 @@ export function ProjectsPage({
     setActionError(null);
     try {
       const message = await onUpdateBoundInstance(instanceId);
-      setActionNotice(message ?? null);
+      setActionNotice(message || null);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : t("projects.updateFailed"));
       setActionNotice(null);
@@ -289,7 +285,7 @@ export function ProjectsPage({
                         <strong>{instance.displayName}</strong>
                       </div>
                       <span>{instance.provider[0].toUpperCase() + instance.provider.slice(1)}</span>
-                      <strong>{instance.linkedVersion || "-"}</strong>
+                      <strong>{instance.appliedVersion || "-"}</strong>
                       <div className="projects-instance-row__action">
                         {instance.status === "bound" ? (
                           <button
@@ -305,7 +301,7 @@ export function ProjectsPage({
                         )}
                       </div>
                       <span className={`status-badge status-badge--${instance.status}`}>
-                        {instance.status === "bound" ? t("common.bound") : t("common.unbound")}
+                        {instance.status === "bound" ? t("common.bound") : instance.status === "lost" ? t("common.lost") : t("common.unbound")}
                       </span>
                       <span className="projects-instance-row__path">{instance.relativePath}</span>
                     </div>
@@ -338,40 +334,47 @@ export function ProjectsPage({
                   <span className="projects-detail__label">{t("projects.indexInfo")}</span>
                   <div className="projects-detail__value-box projects-detail__value-box--stack">
                     <span>linkedSkillId: {selectedInstance.linkedSkillId || "-"}</span>
-                    <span>linkedVersion: {selectedInstance.linkedVersion || "-"}</span>
                     <span>appliedVersion: {selectedInstance.appliedVersion || "-"}</span>
                     <span>indexFile: {selectedInstance.indexPath.split("/").pop() || selectedInstance.indexPath}</span>
+                    {selectedInstance.status === "lost" && (
+                      <span className="projects-detail__lost-hint">{t("projects.lostDesc")}</span>
+                    )}
                   </div>
                 </div>
 
                 <div className="projects-detail__block">
                   <span className="projects-detail__label">{t("projects.bindExisting")}</span>
-                  <div className="projects-detail__bind-grid">
-                    <select value={selectedSkillId || ""} onChange={(event) => onSelectSkillId(event.target.value)}>
-                      <option value="">{t("projects.selectSkill")}</option>
-                      {library.map((skill) => (
-                        <option key={skill.skillId} value={skill.skillId}>{skill.name}</option>
-                      ))}
-                    </select>
-                    <select value={bindVersion} onChange={(event) => setBindVersion(event.target.value)} disabled={!bindableVersions.length}>
-                      {bindableVersions.length ? (
-                        bindableVersions.map((version) => (
-                          <option key={version.version} value={version.version}>{version.version}</option>
-                        ))
-                      ) : (
-                        <option value="">{t("projects.noBindableVersion")}</option>
-                      )}
-                    </select>
-                  </div>
+                  <select value={selectedSkillId || ""} onChange={(event) => onSelectSkillId(event.target.value)}>
+                    <option value="">{t("projects.selectSkill")}</option>
+                    {library.map((skill) => (
+                      <option key={skill.skillId} value={skill.skillId}>{skill.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="projects-detail__actions">
                   <div className="projects-detail__actions-secondary">
-                    <button type="button" className="button button--ghost" onClick={handleBind} disabled={!selectedSkillId || !bindVersion || binding}>
+                    <button type="button" className="button button--ghost" onClick={handleBind} disabled={!selectedSkillId || binding || selectedInstance.status === "bound"}>
                       {t("projects.bindExisting")}
                     </button>
                   </div>
                 </div>
+
+                {selectedInstance.status === "bound" && rollbackVersions.length > 0 && (
+                  <div className="projects-detail__block">
+                    <span className="projects-detail__label">{t("projects.rollback")}</span>
+                    <div className="projects-detail__bind-grid">
+                      <select value={rollbackVersion} onChange={(event) => setRollbackVersion(event.target.value)}>
+                        {rollbackVersions.map((version) => (
+                          <option key={version.version} value={version.version}>{version.version}</option>
+                        ))}
+                      </select>
+                      <button type="button" className="button button--ghost" onClick={handleRollback} disabled={!rollbackVersion || rollingBack || rollbackVersion === selectedInstance.appliedVersion}>
+                        {rollingBack ? t("common.processing") : t("projects.rollbackConfirm")}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {actionError ? <div className="alert alert--error">{actionError}</div> : null}
                 {actionNotice ? <div className="alert alert--info">{actionNotice}</div> : null}

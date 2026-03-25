@@ -21,6 +21,7 @@
     "unpublished": "未发布",
     "bound": "已绑定",
     "unbound": "未绑定",
+    "lost": "绑定丢失",
     "local": "本地",
     "target": "目标",
     "repo": "仓库",
@@ -84,9 +85,13 @@
     "selectSkill": "选择逻辑 Skill",
     "noBindableVersion": "没有可绑定版本",
     "selectInstance": "选择一个本地实例",
-    "successBind": "已将 {{name}} 绑定到 {{version}}。",
+    "successBind": "已将 {{name}} 绑定到 {{skill}}。",
+    "lostDesc": "绑定的全局 Skill 已丢失",
     "bindFailed": "绑定失败",
-    "updateFailed": "更新失败"
+    "updateFailed": "更新失败",
+    "rollback": "回溯版本",
+    "rollbackConfirm": "回溯",
+    "rollbackSuccess": "已回溯 {{name}} 到版本 {{version}}。"
   },
   "library": {
     "skillList": "Skill 列表",

@@ -367,6 +367,8 @@ class DesktopService {
     const indexesDir = this.indexesDirForContext(context);
     ensureDir(indexesDir);
 
+    const data = this.loadLibrary();
+    const skillIds = new Set(data.skills.map((s) => s.skill.skillId));
     const existingIndexes = this.loadIndexMap(indexesDir);
     const instances = [];
 
@@ -412,13 +414,21 @@ class DesktopService {
           };
         }
 
-        index.workspaceRoot = workspaceRoot;
-        index.provider = provider;
-        index.relativePath = relativePath;
-        index.displayName = entry.name;
-        this.writeIndexFile(indexPath, index);
+        const dirty = !existing ||
+          index.workspaceRoot !== workspaceRoot ||
+          index.provider !== provider ||
+          index.relativePath !== relativePath ||
+          index.displayName !== entry.name;
 
-        instances.push(localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index));
+        if (dirty) {
+          index.workspaceRoot = workspaceRoot;
+          index.provider = provider;
+          index.relativePath = relativePath;
+          index.displayName = entry.name;
+          this.writeIndexFile(indexPath, index);
+        }
+
+        instances.push(localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index, skillIds));
       }
     }
 
@@ -447,22 +457,24 @@ class DesktopService {
     const { indexPath, index } = this.findIndexByInstanceId(indexesDir, request.instanceId);
     const existingIndexes = [...this.loadIndexMap(indexesDir).values()].map((entry) => entry.index);
 
+    this.getLibraryDetailRecord(request.skillId);
+
     const duplicate = existingIndexes.some((existing) =>
       existing.instanceId !== request.instanceId &&
       existing.provider === index.provider &&
-      existing.linkedSkillId === request.skillId &&
-      existing.linkedVersion === request.version
+      existing.linkedSkillId === request.skillId
     );
     if (duplicate) {
-      throw new Error("同一个全局版本在当前工作区的同一 provider 下只能绑定一个本地实例。");
+      throw new Error("同一个全局 Skill 在当前工作区的同一 provider 下只能绑定一个本地实例。");
     }
 
-    this.ensureVersionExists(request.skillId, request.version);
     index.linkedSkillId = request.skillId;
-    index.linkedVersion = request.version;
+    index.linkedVersion = null;
     this.writeIndexFile(indexPath, index);
 
-    return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index);
+    const data = this.loadLibrary();
+    const skillIds = new Set(data.skills.map((s) => s.skill.skillId));
+    return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index, skillIds);
   }
 
   updateBoundInstance(request) {
@@ -472,7 +484,9 @@ class DesktopService {
       const workspace = this.workspaceRecordForContext(context, null);
       const indexesDir = this.indexesDirForContext(context);
       const { indexPath, index } = this.findIndexByInstanceId(indexesDir, request.instanceId);
-      return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index);
+      const data = this.loadLibrary();
+      const skillIds = new Set(data.skills.map((s) => s.skill.skillId));
+      return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index, skillIds);
     }
 
     if (preview.action === "needs_resolution") {
@@ -485,7 +499,9 @@ class DesktopService {
     const workspace = this.workspaceRecordForContext(context, null);
     const indexesDir = this.indexesDirForContext(context);
     const { indexPath, index } = this.findIndexByInstanceId(indexesDir, request.instanceId);
-    return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index);
+    const data = this.loadLibrary();
+    const skillIds = new Set(data.skills.map((s) => s.skill.skillId));
+    return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index, skillIds);
   }
 
   publishToGlobal(request) {
@@ -624,27 +640,29 @@ class DesktopService {
     const indexesDir = this.indexesDirForContext(context);
     const { index } = this.findIndexByInstanceId(indexesDir, request.instanceId);
 
-    if (!index.linkedSkillId || !index.linkedVersion) {
+    if (!index.linkedSkillId) {
       throw new Error("只能更新已绑定实例。");
     }
 
-    if (!request.force && index.linkedSkillId === index.appliedSkillId && index.linkedVersion === index.appliedVersion) {
+    const detail = this.getLibraryDetailRecord(index.linkedSkillId);
+    const targetVersionRecord = request.targetVersion
+      ? detail.versions.find((v) => v.version === request.targetVersion)
+      : sortVersions(detail.versions)[0];
+    if (!targetVersionRecord) {
+      throw new Error(request.targetVersion ? `版本 ${request.targetVersion} 不存在。` : "绑定的 Skill 没有已发布的版本。");
+    }
+
+    if (!request.force && index.appliedSkillId === index.linkedSkillId && index.appliedVersion === targetVersionRecord.version) {
       return {
         action: "noop",
         operation: "update",
-        message: "当前目标版本与已应用版本一致，没有可更新内容。"
+        message: request.targetVersion ? "当前已是该版本，无需回溯。" : "已是最新版本，无需更新。"
       };
     }
 
-    const detail = this.getLibraryDetailRecord(index.linkedSkillId);
-    const version = detail.versions.find((item) => item.version === index.linkedVersion);
-    if (!version) {
-      throw new Error("已绑定的全局版本不存在。");
-    }
-
-    const targetVariant = selectVersionVariant(version, index.provider);
+    const targetVariant = selectVersionVariant(targetVersionRecord, index.provider);
     if (!targetVariant) {
-      throw new Error(`当前绑定版本不存在 ${index.provider} provider 变体。`);
+      throw new Error(`目标版本不存在 ${index.provider} provider 变体。`);
     }
 
     const localDir = this.resolveInstanceSourceDir(context, index);
@@ -652,25 +670,30 @@ class DesktopService {
     let baseDir = null;
 
     if (index.appliedSkillId && index.appliedVersion) {
-      const appliedDetail = this.getLibraryDetailRecord(index.appliedSkillId);
-      const appliedVersion = appliedDetail.versions.find((entry) => entry.version === index.appliedVersion) ?? null;
-      const appliedVariant = appliedVersion ? selectVersionVariant(appliedVersion, index.provider) : null;
-      if (appliedVariant) {
-        baseDir = this.ensureVariantPayloadDir(appliedVariant);
+      try {
+        const appliedDetail = this.getLibraryDetailRecord(index.appliedSkillId);
+        const appliedVersion = appliedDetail.versions.find((entry) => entry.version === index.appliedVersion) ?? null;
+        const appliedVariant = appliedVersion ? selectVersionVariant(appliedVersion, index.provider) : null;
+        if (appliedVariant) {
+          baseDir = this.ensureVariantPayloadDir(appliedVariant);
+        }
+      } catch {
+        // appliedSkill 可能已被删除，忽略
       }
     }
 
     return prepareMergeSession({
       sessionsRoot: this.mergeSessionsDir,
       operation: "update",
-      title: `更新 ${index.displayName}`,
-      description: `比较本地内容与目标版本 ${index.linkedVersion}，必要时进入冲突处理。`,
+      title: request.targetVersion ? `回溯 ${index.displayName}` : `更新 ${index.displayName}`,
+      description: `比较本地内容与目标版本 ${targetVersionRecord.version}，必要时进入冲突处理。`,
       displayName: index.displayName,
       sourceLabel: "本地实例",
-      targetLabel: `${detail.skill.name} ${version.version}`,
+      targetLabel: `${detail.skill.name} ${targetVersionRecord.version}`,
       metadata: {
         workspaceRoot: request.workspaceRoot,
-        instanceId: request.instanceId
+        instanceId: request.instanceId,
+        targetVersion: targetVersionRecord.version
       },
       baseRoot: baseDir,
       localRoot: localDir,
@@ -726,8 +749,10 @@ class DesktopService {
       copyDir(state.paths.resultRoot, targetDir);
     }
 
+    const targetVersion = state.meta.metadata.targetVersion || index.linkedVersion;
     index.appliedSkillId = index.linkedSkillId;
-    index.appliedVersion = index.linkedVersion;
+    index.appliedVersion = targetVersion;
+    index.linkedVersion = targetVersion;
     this.writeIndexFile(indexPath, index);
 
     const data = this.loadLibrary();
@@ -735,7 +760,7 @@ class DesktopService {
       data,
       "update",
       `更新 ${index.displayName}`,
-      `已从 ${index.linkedSkillId} ${index.linkedVersion} 的 ${index.provider} provider 变体同步到 ${workspace.name}。`
+      `已从 ${index.linkedSkillId} ${targetVersion} 的 ${index.provider} provider 变体同步到 ${workspace.name}。`
     );
     this.saveLibrary(data);
     discardMergeSession(this.mergeSessionsDir, state.meta.sessionId);
@@ -1425,7 +1450,11 @@ function nowCompact() {
   return nowIso().replaceAll("-", "").replaceAll(":", "").replace("T", "").replace("Z", "");
 }
 
-function localInstanceFromIndex(workspace, indexPath, index) {
+function localInstanceFromIndex(workspace, indexPath, index, skillIds) {
+  let status = "unbound";
+  if (index.linkedSkillId) {
+    status = skillIds && skillIds.has(index.linkedSkillId) ? "bound" : "lost";
+  }
   return {
     instanceId: index.instanceId,
     workspaceId: workspace.workspaceId,
@@ -1436,7 +1465,7 @@ function localInstanceFromIndex(workspace, indexPath, index) {
     linkedVersion: index.linkedVersion,
     appliedSkillId: index.appliedSkillId,
     appliedVersion: index.appliedVersion,
-    status: index.linkedSkillId ? "bound" : "unbound",
+    status,
     indexPath
   };
 }

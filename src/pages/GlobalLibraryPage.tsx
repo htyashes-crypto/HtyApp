@@ -12,6 +12,21 @@ interface GlobalLibraryPageProps {
   onExport: () => void;
 }
 
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+} as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
+};
+
+const fadeLeft = {
+  hidden: { opacity: 0, x: -8 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.25, ease: "easeOut" as const } },
+};
+
 export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, detail, onExport }: GlobalLibraryPageProps) {
   const { t } = useTranslation();
   return (
@@ -23,34 +38,37 @@ export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, deta
             <p>{t("library.skillListDesc")}</p>
           </div>
         </div>
-        <div className="stack-list stack-list--scroll">
+        <motion.div className="stack-list stack-list--scroll" variants={stagger} initial="hidden" animate="visible">
           {skills.map((skill) => (
-            <button
+            <motion.button
               key={skill.skillId}
+              variants={fadeLeft}
               type="button"
-              className={`list-card list-card--interactive ${selectedSkillId === skill.skillId ? "is-active" : ""}`}
+              className={`skill-card ${selectedSkillId === skill.skillId ? "is-active" : ""}`}
               onClick={() => onSelectSkill(skill.skillId)}
             >
-              <div>
-                <h4>{skill.name}</h4>
-                <p>{skill.description}</p>
+              <div className="skill-card__head">
+                <h4 className="skill-card__name">{skill.name}</h4>
+                {skill.latestVersion && <span className="skill-card__version">{skill.latestVersion}</span>}
               </div>
-              <div className="list-card__meta">
-                <span>{skill.latestVersion || t("library.unpublished")}</span>
-                <ProviderPills providers={skill.latestProviders} compact />
-              </div>
-            </button>
+              {skill.description && <p className="skill-card__desc">{skill.description}</p>}
+              <ProviderPills providers={skill.latestProviders} compact />
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
+        <div className="library-spacer" />
       </section>
 
-      <section className="panel">
+      <section className="panel panel--scroll-shell">
         {detail ? (
           <>
-            <div className="panel__header">
-              <div>
-                <h3>{detail.skill.name}</h3>
-                <p>{detail.skill.description}</p>
+            <div className="panel__header panel__header--detail">
+              <div className="detail-header-row">
+                <span className="detail-badge">{detail.skill.name.charAt(0).toUpperCase()}</span>
+                <div>
+                  <h3>{detail.skill.name}</h3>
+                  <p>{detail.skill.description}</p>
+                </div>
               </div>
               <div className="panel__actions">
                 <button type="button" className="button button--ghost" onClick={onExport}>
@@ -70,9 +88,9 @@ export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, deta
               </div>
             </div>
 
-            <div className="versions-list">
+            <motion.div className="versions-list" variants={stagger} initial="hidden" animate="visible">
               {detail.versions.map((version) => (
-                <article key={version.version} className="version-card">
+                <motion.article key={version.version} className="version-card" variants={fadeUp}>
                   <header>
                     <div>
                       <h4>{version.version}</h4>
@@ -89,9 +107,9 @@ export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, deta
                       </div>
                     ))}
                   </div>
-                </article>
+                </motion.article>
               ))}
-            </div>
+            </motion.div>
           </>
         ) : (
           <div className="empty-state">
@@ -101,14 +119,14 @@ export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, deta
         )}
       </section>
 
-      <section className="panel">
+      <section className="panel panel--scroll-shell">
         <div className="panel__header">
           <div>
             <h3>{t("library.versionTimeline")}</h3>
             <p>{t("library.versionTimelineDesc")}</p>
           </div>
         </div>
-        <div className="timeline-list">
+        <div className="timeline-list timeline-list--connected">
           {detail?.versions.map((version) => (
             <article key={version.version} className="timeline-item timeline-item--compact">
               <div className="timeline-item__marker" />

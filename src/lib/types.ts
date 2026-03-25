@@ -14,7 +14,7 @@ export interface WorkspaceRecord {
   availableProviders: Provider[];
 }
 
-export type InstanceStatus = "bound" | "unbound";
+export type InstanceStatus = "bound" | "unbound" | "lost";
 
 export interface LocalInstance {
   instanceId: string;
@@ -142,13 +142,13 @@ export interface BindRequest {
   workspaceRoot: string;
   instanceId: string;
   skillId: string;
-  version: string;
 }
 
 export interface UpdateBoundInstanceRequest {
   workspaceRoot: string;
   instanceId: string;
   force?: boolean;
+  targetVersion?: string;
 }
 
 export interface ExportPackageRequest {

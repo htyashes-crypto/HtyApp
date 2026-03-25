@@ -675,16 +675,15 @@ export const mockApi: any = {
       (item) =>
         item.instanceId !== request.instanceId &&
         item.provider === instance.provider &&
-        item.linkedSkillId === request.skillId &&
-        item.linkedVersion === request.version
+        item.linkedSkillId === request.skillId
     );
     if (duplicate) {
-      throw new Error("同一个全局版本在当前工作区的同一 provider 下只能绑定一个本地实例。");
+      throw new Error("同一个全局 Skill 在当前工作区的同一 provider 下只能绑定一个本地实例。");
     }
     instance.linkedSkillId = request.skillId;
-    instance.linkedVersion = request.version;
+    instance.linkedVersion = null;
     instance.status = "bound";
-    addActivity("bind", `绑定 ${instance.displayName}`, `绑定到 ${request.skillId} ${request.version}`);
+    addActivity("bind", `绑定 ${instance.displayName}`, `绑定到 ${request.skillId}`);
     return instance;
   },
 

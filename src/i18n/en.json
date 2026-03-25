@@ -21,6 +21,7 @@
     "unpublished": "Unpublished",
     "bound": "Bound",
     "unbound": "Unbound",
+    "lost": "Lost",
     "local": "Local",
     "target": "Target",
     "repo": "Repository",
@@ -84,9 +85,13 @@
     "selectSkill": "Select Logic Skill",
     "noBindableVersion": "No bindable versions available",
     "selectInstance": "Select a local instance",
-    "successBind": "Successfully bound {{name}} to {{version}}.",
+    "successBind": "Successfully bound {{name}} to {{skill}}.",
+    "lostDesc": "Linked global skill is missing",
     "bindFailed": "Bind failed",
-    "updateFailed": "Update failed"
+    "updateFailed": "Update failed",
+    "rollback": "Rollback Version",
+    "rollbackConfirm": "Rollback",
+    "rollbackSuccess": "Rolled back {{name}} to version {{version}}."
   },
   "library": {
     "skillList": "Skill List",

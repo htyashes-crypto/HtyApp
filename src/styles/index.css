@@ -20,6 +20,11 @@
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 10px;
+  --glow-a: rgba(0, 194, 168, 0.12);
+  --glow-b: rgba(53, 184, 255, 0.10);
+  --card-hover-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  --card-active-shadow: 0 0 0 1px rgba(53, 184, 255, 0.12), 0 4px 24px rgba(0, 0, 0, 0.18);
+  --stat-gradient: linear-gradient(135deg, var(--brand-a), var(--brand-b));
 }
 
 * {
@@ -366,11 +371,45 @@ textarea {
 }
 
 .hero-card {
-  border-radius: var(--radius-lg);
-  padding: 22px;
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
   display: flex;
   justify-content: space-between;
-  gap: 20px;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(0, 194, 168, 0.08) 0%, rgba(53, 184, 255, 0.06) 50%, rgba(9, 14, 22, 0.36) 100%);
+  border-color: rgba(0, 194, 168, 0.15);
+}
+
+.hero-card::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-a) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: -20px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-b) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-card h2,
@@ -413,13 +452,41 @@ textarea {
 
 .stat-card {
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 20px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--card-hover-shadow);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.stat-card--accent-a::before { background: linear-gradient(90deg, var(--brand-a), transparent); }
+.stat-card--accent-b::before { background: linear-gradient(90deg, var(--brand-b), transparent); }
+.stat-card--accent-c::before { background: linear-gradient(90deg, #a78bfa, transparent); }
+.stat-card--accent-d::before { background: linear-gradient(90deg, var(--danger), transparent); }
+
 .stat-card strong {
-  font-size: 32px;
+  font-size: 36px;
+  line-height: 1;
+  background: var(--stat-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .content-grid {
@@ -444,6 +511,12 @@ textarea {
 
 .library-layout .panel--scroll-shell {
   background: rgba(9, 14, 22, 0.36);
+  overflow-y: auto;
+}
+
+/* library 详情区和时间线也支持滚动 */
+.library-layout > .panel--scroll-shell:not(:first-child) {
+  overflow-y: auto;
 }
 
 .panel--scroll-shell {
@@ -457,6 +530,95 @@ textarea {
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+/* library 左侧列表：不强制撑满，内容驱动高度 */
+.library-layout .stack-list--scroll {
+  flex: 0 1 auto;
+  max-height: 100%;
+}
+
+.library-spacer {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Skill card (library left panel) ── */
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: rgba(9, 14, 22, 0.36);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+}
+
+.skill-card:hover {
+  background: rgba(126, 153, 182, 0.1);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--card-hover-shadow);
+}
+
+.skill-card.is-active {
+  border-color: rgba(53, 184, 255, 0.32);
+  background: rgba(53, 184, 255, 0.1);
+  box-shadow: var(--card-active-shadow);
+}
+
+.skill-card.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--brand-a), var(--brand-b));
+}
+
+.skill-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.skill-card__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.skill-card__version {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(126, 153, 182, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.skill-card__desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .panel {
@@ -476,8 +638,9 @@ textarea {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 0;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--line-strong), var(--line), transparent) 1;
 }
 
 .panel__header p,
@@ -526,6 +689,25 @@ textarea {
 .checkbox-pill.is-active {
   border-color: rgba(53, 184, 255, 0.22);
   background: rgba(53, 184, 255, 0.08);
+}
+
+/* 总览页面卡片 hover 滑动效果 */
+.list-card--hoverable {
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.list-card--hoverable:hover {
+  background: rgba(126, 153, 182, 0.08);
+  transform: translateX(4px);
+}
+
+.workspace-card--hoverable {
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.workspace-card--hoverable:hover {
+  background: rgba(126, 153, 182, 0.06);
+  transform: translateX(4px);
 }
 
 .list-card,
@@ -587,6 +769,28 @@ textarea {
   color: var(--text-soft);
 }
 
+/* detail 头部徽章 */
+.detail-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.detail-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 14px;
+  background: var(--stat-gradient);
+  color: #081117;
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
 .detail-card {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -634,8 +838,40 @@ textarea {
   gap: 16px;
 }
 
+/* 时间线连接线 */
+.timeline-list--connected .timeline-item {
+  position: relative;
+  padding-left: 26px;
+}
+
+.timeline-list--connected .timeline-item .timeline-item__marker {
+  position: absolute;
+  left: 0;
+  top: 5px;
+}
+
+.timeline-list--connected .timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 20px;
+  bottom: -12px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--line-strong), transparent);
+}
+
+.timeline-list--connected .timeline-item:last-child::before {
+  display: none;
+}
+
 .version-card {
   flex-direction: column;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.version-card:hover {
+  background: rgba(126, 153, 182, 0.06);
+  box-shadow: var(--card-hover-shadow);
 }
 
 .version-card header {
@@ -832,12 +1068,54 @@ textarea {
   color: #ffd6cf;
 }
 
+/* 内容面板 hover 效果 */
+.content-grid--overview .panel {
+  transition: box-shadow 0.2s ease;
+}
+
+.content-grid--overview .panel:hover {
+  box-shadow: var(--card-hover-shadow);
+}
+
+/* 滚动条美化 */
+.stack-list--scroll::-webkit-scrollbar,
+.versions-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.stack-list--scroll::-webkit-scrollbar-track,
+.versions-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.stack-list--scroll::-webkit-scrollbar-thumb,
+.versions-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+
+.stack-list--scroll::-webkit-scrollbar-thumb:hover,
+.versions-list::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+
 .empty-state {
   min-height: 240px;
   display: grid;
   place-content: center;
   text-align: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.empty-state::before {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 8px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--glow-a), var(--glow-b));
+  border: 1px dashed var(--line);
 }
 
 .bullet-list li {
@@ -880,6 +1158,28 @@ textarea {
   .topbar__actions {
     justify-content: flex-end;
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 881px) {
+  .content-grid--overview {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .content-grid--overview .panel:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .three-column-layout {
+    grid-template-columns: 280px 1fr;
+  }
+
+  .library-layout > section:last-child {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1386,6 +1686,16 @@ textarea {
   color: #ffe2be;
 }
 
+.status-badge--lost {
+  background: rgba(255, 143, 120, 0.22);
+  color: #ffd6cf;
+}
+
+.projects-detail__lost-hint {
+  color: var(--danger);
+  font-size: 12px;
+}
+
 .projects-detail__hero {
   display: flex;
   align-items: flex-start;
@@ -1640,6 +1950,11 @@ textarea {
   --window-dot-1: #c2c8d0;
   --window-dot-2: #a9b2be;
   --window-dot-3: #e88d77;
+  --glow-a: rgba(145, 182, 255, 0.1);
+  --glow-b: rgba(139, 215, 217, 0.08);
+  --card-hover-shadow: 0 4px 20px rgba(99, 107, 122, 0.08);
+  --card-active-shadow: 0 0 0 1px rgba(123, 160, 255, 0.16), 0 4px 24px rgba(99, 107, 122, 0.1);
+  --stat-gradient: linear-gradient(135deg, #4566bf, #2f7476);
 }
 
 html,
@@ -1858,6 +2173,11 @@ select:focus {
   color: var(--status-unbound-text);
 }
 
+.status-badge--lost {
+  background: var(--alert-bg);
+  color: var(--alert-text);
+}
+
 .alert--error {
   background: var(--alert-bg);
   border-color: var(--alert-border);
@@ -1996,6 +2316,57 @@ body::before {
   background: rgba(245, 242, 237, 0.5);
 }
 
+:root[data-theme="light"] .hero-card {
+  background:
+    linear-gradient(135deg, rgba(145, 182, 255, 0.08) 0%, rgba(139, 215, 217, 0.06) 50%, rgba(255, 252, 247, 0.36) 100%);
+  border-color: rgba(123, 160, 255, 0.18);
+}
+
+:root[data-theme="light"] .stat-card--accent-a::before { background: linear-gradient(90deg, var(--brand-a), transparent); }
+:root[data-theme="light"] .stat-card--accent-b::before { background: linear-gradient(90deg, var(--brand-b), transparent); }
+:root[data-theme="light"] .stat-card--accent-c::before { background: linear-gradient(90deg, #8b6cc4, transparent); }
+:root[data-theme="light"] .stat-card--accent-d::before { background: linear-gradient(90deg, #cf9660, transparent); }
+
+:root[data-theme="light"] .skill-card:hover {
+  background: rgba(74, 86, 107, 0.06);
+  border-color: var(--line-strong);
+}
+
+:root[data-theme="light"] .skill-card.is-active {
+  border-color: rgba(123, 160, 255, 0.32);
+  background: rgba(123, 160, 255, 0.08);
+}
+
+:root[data-theme="light"] .skill-card.is-active::before {
+  background: linear-gradient(180deg, var(--brand-a), var(--brand-b));
+}
+
+:root[data-theme="light"] .skill-card__version {
+  background: rgba(74, 86, 107, 0.08);
+}
+
+:root[data-theme="light"] .detail-badge {
+  background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+  color: #fff;
+}
+
+:root[data-theme="light"] .list-card--hoverable:hover,
+:root[data-theme="light"] .workspace-card--hoverable:hover {
+  background: rgba(74, 86, 107, 0.05);
+}
+
+:root[data-theme="light"] .version-card:hover {
+  background: rgba(74, 86, 107, 0.04);
+}
+
+:root[data-theme="light"] .timeline-list--connected .timeline-item::before {
+  background: linear-gradient(180deg, var(--line-strong), transparent);
+}
+
+:root[data-theme="light"] .empty-state::before {
+  background: linear-gradient(135deg, var(--glow-a), var(--glow-b));
+  border-color: var(--line-strong);
+}
 
 .dialog__install-layout {
   display: grid;
