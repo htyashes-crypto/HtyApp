@@ -9,6 +9,7 @@ export default defineConfig({
     strictPort: true
   },
   envPrefix: ["VITE_", "ELECTRON_"],
+  base: "./",
   build: {
     target: "es2021",
     minify: "esbuild",

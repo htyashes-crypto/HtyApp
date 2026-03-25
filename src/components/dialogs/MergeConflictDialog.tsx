@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, FileWarning, LoaderCircle, PencilLine, ChevronLeft, ChevronRight, FileText, FileX, ArrowRight } from "lucide-react";
+import { CheckCircle2, FileWarning, LoaderCircle, PencilLine, ChevronLeft, ChevronRight, FileText, FileX, FilePlus, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api";
 import type { CommitMergeSessionResponse, MergeSessionFileDetail, MergeSessionSummary } from "../../lib/merge-types";
 import { cn } from "../../lib/utils";
