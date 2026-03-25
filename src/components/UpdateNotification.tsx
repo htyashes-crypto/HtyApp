@@ -84,7 +84,15 @@ export function UpdateNotification() {
       )}
       {phase === "error" && (
         <>
-          <span style={styles.text}>更新出错: {errorMsg}</span>
+          <span style={{ ...styles.text, overflow: "hidden", textOverflow: "ellipsis" }}>更新出错: {errorMsg}</span>
+          <button
+            style={styles.dismissBtn}
+            onClick={() => {
+              navigator.clipboard.writeText(errorMsg);
+            }}
+          >
+            复制
+          </button>
           <button style={styles.dismissBtn} onClick={() => setDismissed(true)}>关闭</button>
         </>
       )}
