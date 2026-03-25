@@ -3,6 +3,7 @@ const path = require("node:path");
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const { createDesktopService } = require("./service.cjs");
 const { createSyncService } = require("./sync-service.cjs");
+const { initAutoUpdater } = require("./updater.cjs");
 
 const rendererUrl = process.env.ELECTRON_RENDERER_URL || null;
 const useDevServer = Boolean(rendererUrl);
@@ -116,6 +117,10 @@ app.whenReady().then(() => {
 
   const appDataDir = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
   syncService = createSyncService({ appDataDir, mainWindow });
+
+  if (!useDevServer) {
+    initAutoUpdater(mainWindow);
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

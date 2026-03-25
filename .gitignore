@@ -1,6 +1,7 @@
 node_modules/
 dist/
 target/
+release/
 src-tauri/target/
 .DS_Store
 *.log

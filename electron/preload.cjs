@@ -17,5 +17,22 @@ contextBridge.exposeInMainWorld("htyElectron", {
   },
   removeSyncEvent(channel, listener) {
     ipcRenderer.removeListener(channel, listener);
+  },
+  checkForUpdate() {
+    return ipcRenderer.invoke("hty:check-update");
+  },
+  downloadUpdate() {
+    return ipcRenderer.invoke("hty:download-update");
+  },
+  quitAndInstall() {
+    return ipcRenderer.invoke("hty:quit-and-install");
+  },
+  onUpdateStatus(callback) {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on("hty:update-status", listener);
+    return listener;
+  },
+  removeUpdateStatus(listener) {
+    ipcRenderer.removeListener("hty:update-status", listener);
   }
 });
