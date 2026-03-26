@@ -112,21 +112,14 @@ export function SyncApp() {
 
   const handleSelectRepo = useCallback((repoId: string) => {
     toggleExpandRepo(repoId);
-    // Select the repo and its first project
+  }, [toggleExpandRepo]);
+
+  const handleSelectProject = useCallback((repoId: string, projectName: string) => {
     if (repoId !== selectedRepoId) {
       setSelectedRepoId(repoId);
-      const repo = repositories.find((r) => r.Id === repoId);
-      if (repo && repo.Projects.length) {
-        setSelectedProjectName(repo.Projects[0].Name);
-      } else {
-        setSelectedProjectName(null);
-      }
     }
-  }, [toggleExpandRepo, selectedRepoId, setSelectedRepoId, setSelectedProjectName, repositories]);
-
-  const handleSelectProject = useCallback((_repoId: string, projectName: string) => {
     setSelectedProjectName(projectName);
-  }, [setSelectedProjectName]);
+  }, [selectedRepoId, setSelectedRepoId, setSelectedProjectName]);
 
   return (
     <div className="sync-app">

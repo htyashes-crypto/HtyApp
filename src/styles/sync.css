@@ -119,6 +119,7 @@
   padding: 8px 10px;
   cursor: pointer;
   transition: background 0.12s;
+  user-select: none;
 }
 
 .sync-repo-group__header:hover {
@@ -192,6 +193,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 2px 6px;
+  user-select: none;
 }
 
 .sync-repo-group--adding {
@@ -315,6 +317,7 @@
   cursor: pointer;
   transition: background 0.12s;
   border: 1px solid transparent;
+  user-select: none;
 }
 
 .sync-project-item:hover {
