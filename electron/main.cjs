@@ -74,6 +74,7 @@ function registerIpcHandlers() {
     const targetWindow = BrowserWindow.getFocusedWindow() || mainWindow || undefined;
     const result = await dialog.showOpenDialog(targetWindow, {
       title: options?.title,
+      defaultPath: options?.defaultPath || undefined,
       properties: [
         ...(options?.directory ? ["openDirectory"] : ["openFile"]),
         ...(options?.multiple ? ["multiSelections"] : [])

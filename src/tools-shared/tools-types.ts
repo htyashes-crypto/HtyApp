@@ -11,13 +11,18 @@ export interface TaskItem {
   completedAt: string | null;
 }
 
-export type BookmarkType = "file" | "directory";
+export type BookmarkEntryType = "file" | "directory";
 
-export interface BookmarkItem {
+export interface BookmarkEntry {
   id: string;
-  label: string;
   absolutePath: string;
   relativePath: string;
-  type: BookmarkType;
+  type: BookmarkEntryType;
+}
+
+export interface BookmarkGroup {
+  id: string;
+  name: string;
+  entries: BookmarkEntry[];
   createdAt: string;
 }

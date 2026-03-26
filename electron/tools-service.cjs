@@ -26,14 +26,18 @@ class ToolsService {
         return this.todo.clearDone();
 
       // Marks
-      case "marks_list":
-        return this.bookmark.list(args.workspaceId);
-      case "marks_add":
-        return this.bookmark.add(args);
-      case "marks_update":
-        return this.bookmark.update(args);
-      case "marks_delete":
-        return this.bookmark.delete(args.workspaceId, args.id);
+      case "marks_list_groups":
+        return this.bookmark.listGroups(args.workspaceId);
+      case "marks_create_group":
+        return this.bookmark.createGroup(args);
+      case "marks_rename_group":
+        return this.bookmark.renameGroup(args);
+      case "marks_delete_group":
+        return this.bookmark.deleteGroup(args);
+      case "marks_add_entry":
+        return this.bookmark.addEntry(args);
+      case "marks_delete_entry":
+        return this.bookmark.deleteEntry(args);
 
       default:
         throw new Error(`unknown tools command: ${command}`);

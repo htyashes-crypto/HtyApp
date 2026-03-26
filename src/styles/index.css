@@ -1613,34 +1613,107 @@ textarea {
 .marks-toolbar h3 { margin: 0; font-size: 16px; }
 .marks-toolbar__actions { display: flex; gap: 8px; }
 
-.marks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mark-row {
+.marks-create-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
+}
+
+.marks-create-row input {
+  flex: 1;
+  font-size: 14px;
+}
+
+.marks-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marks-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.marks-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.marks-group__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.marks-group__count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(126, 153, 182, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.marks-group__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.marks-group__entries {
+  border-top: 1px solid var(--line);
+  padding: 6px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.marks-group__empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 0;
+  margin: 0;
+}
+
+.marks-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
   transition: background 0.15s;
 }
-.mark-row:hover { background: rgba(126, 153, 182, 0.05); }
+.marks-entry:hover { background: rgba(126, 153, 182, 0.05); }
 
 .mark-icon { color: var(--text-muted); flex-shrink: 0; }
 
-.mark-info {
+.marks-entry__info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
-.mark-info strong { font-size: 14px; color: var(--text); }
-.mark-info span { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marks-entry__abs { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marks-entry__rel { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.marks-entry__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
 
 .mark-actions {
   display: flex;
@@ -1666,7 +1739,7 @@ textarea {
 
 /* Light theme */
 :root[data-theme="light"] .task-row:hover,
-:root[data-theme="light"] .mark-row:hover { background: rgba(74, 86, 107, 0.04); }
+:root[data-theme="light"] .marks-entry:hover { background: rgba(74, 86, 107, 0.04); }
 :root[data-theme="light"] .marks-workspace-item:hover { background: rgba(74, 86, 107, 0.04); }
 :root[data-theme="light"] .marks-workspace-item.is-active { background: rgba(123, 160, 255, 0.08); border-color: rgba(123, 160, 255, 0.32); }
 

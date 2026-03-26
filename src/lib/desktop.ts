@@ -7,6 +7,7 @@ export interface DesktopOpenDialogOptions {
   directory?: boolean;
   multiple?: boolean;
   title?: string;
+  defaultPath?: string;
   filters?: DesktopDialogFilter[];
 }
 

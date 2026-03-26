@@ -1,5 +1,5 @@
 import { getDesktopBridge, isDesktopRuntime } from "../lib/desktop";
-import type { TaskItem, TaskPriority, BookmarkItem } from "./tools-types";
+import type { TaskItem, TaskPriority, BookmarkGroup, BookmarkEntry } from "./tools-types";
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const bridge = getDesktopBridge();
@@ -26,16 +26,22 @@ export const tasksApi = {
 };
 
 export const marksApi = {
-  async list(workspaceId: string): Promise<BookmarkItem[]> {
-    return isDesktopRuntime() ? call<BookmarkItem[]>("marks_list", { workspaceId }) : [];
+  async listGroups(workspaceId: string): Promise<BookmarkGroup[]> {
+    return isDesktopRuntime() ? call<BookmarkGroup[]>("marks_list_groups", { workspaceId }) : [];
   },
-  async add(workspaceId: string, workspaceRoot: string, absolutePath: string): Promise<BookmarkItem> {
-    return call<BookmarkItem>("marks_add", { workspaceId, workspaceRoot, absolutePath });
+  async createGroup(workspaceId: string, workspaceRoot: string, name: string): Promise<BookmarkGroup> {
+    return call<BookmarkGroup>("marks_create_group", { workspaceId, workspaceRoot, name });
   },
-  async update(workspaceId: string, id: string, label: string): Promise<BookmarkItem> {
-    return call<BookmarkItem>("marks_update", { workspaceId, id, label });
+  async renameGroup(workspaceId: string, groupId: string, name: string): Promise<BookmarkGroup> {
+    return call<BookmarkGroup>("marks_rename_group", { workspaceId, groupId, name });
   },
-  async delete(workspaceId: string, id: string): Promise<void> {
-    await call<void>("marks_delete", { workspaceId, id });
+  async deleteGroup(workspaceId: string, groupId: string): Promise<void> {
+    await call<void>("marks_delete_group", { workspaceId, groupId });
+  },
+  async addEntry(workspaceId: string, workspaceRoot: string, groupId: string, absolutePath: string): Promise<BookmarkEntry> {
+    return call<BookmarkEntry>("marks_add_entry", { workspaceId, workspaceRoot, groupId, absolutePath });
+  },
+  async deleteEntry(workspaceId: string, groupId: string, entryId: string): Promise<void> {
+    await call<void>("marks_delete_entry", { workspaceId, groupId, entryId });
   }
 };
