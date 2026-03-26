@@ -3,6 +3,7 @@ const path = require("node:path");
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const { createDesktopService } = require("./service.cjs");
 const { createSyncService } = require("./sync-service.cjs");
+const { createToolsService } = require("./tools-service.cjs");
 const { initAutoUpdater } = require("./updater.cjs");
 
 const rendererUrl = process.env.ELECTRON_RENDERER_URL || null;
@@ -10,6 +11,7 @@ const useDevServer = Boolean(rendererUrl);
 let mainWindow = null;
 let service = null;
 let syncService = null;
+let toolsService = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -18,7 +20,7 @@ function createWindow() {
     minWidth: 1180,
     minHeight: 760,
     show: false,
-    title: "Hty-Skill 管理器",
+    title: "HtyApp",
     icon: path.join(__dirname, "..", "build", "htyapp-icon.ico"),
     backgroundColor: "#11151b",
     webPreferences: {
@@ -56,6 +58,9 @@ function registerIpcHandlers() {
     try {
       if (payload.command.startsWith("sync_")) {
         return await syncService.invoke(payload.command, payload.args || {});
+      }
+      if (payload.command.startsWith("tasks_") || payload.command.startsWith("marks_")) {
+        return await toolsService.invoke(payload.command, payload.args || {});
       }
 
       return await service.invoke(payload.command, payload.args || {});
@@ -118,6 +123,7 @@ app.whenReady().then(() => {
 
   const appDataDir = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
   syncService = createSyncService({ appDataDir, mainWindow });
+  toolsService = createToolsService({ appDataDir: app.getPath("userData") });
 
   if (!useDevServer) {
     initAutoUpdater(mainWindow);

@@ -114,11 +114,11 @@ export function PublishDialog({
         return;
       }
 
-      await api.publishToGlobal({
+      const publishRequest = {
         workspaceRoot,
         instanceId: instance.instanceId,
         providers,
-        skillMode: "create",
+        skillMode: "create" as const,
         name,
         slug,
         description,
@@ -127,11 +127,39 @@ export function PublishDialog({
           .map((item) => item.trim())
           .filter(Boolean),
         notes
-      });
+      };
+      await api.publishToGlobal(publishRequest);
       onSuccess();
       onClose();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t("publish.uploadFailed"));
+      const msg = caught instanceof Error ? caught.message : String(caught);
+      if (msg.includes("NAME_CONFLICT")) {
+        const confirmed = window.confirm(`全局库中已有同名技能 "${name}"，是否替换？`);
+        if (confirmed) {
+          try {
+            await api.publishToGlobal({
+              workspaceRoot,
+              instanceId: instance.instanceId,
+              providers,
+              skillMode: "create",
+              name,
+              slug,
+              description,
+              tags: tags.split(",").map((item) => item.trim()).filter(Boolean),
+              notes,
+              forceReplace: true
+            });
+            onSuccess();
+            onClose();
+            return;
+          } catch (retryErr) {
+            setError(retryErr instanceof Error ? retryErr.message : t("publish.uploadFailed"));
+            return;
+          }
+        }
+        return;
+      }
+      setError(msg || t("publish.uploadFailed"));
     } finally {
       setSubmitting(false);
     }

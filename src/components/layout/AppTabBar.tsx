@@ -1,4 +1,4 @@
-import { Boxes, FolderSync } from "lucide-react";
+import { Bookmark, Boxes, FolderSync, ListChecks } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUiStore } from "../../state/ui-store";
 import type { AppTab } from "../../state/ui-store";
@@ -10,7 +10,9 @@ export function AppTabBar() {
 
   const tabs: { key: AppTab; label: string; icon: typeof Boxes }[] = [
     { key: "skill", label: t("appTab.skill"), icon: Boxes },
-    { key: "sync", label: t("appTab.sync"), icon: FolderSync }
+    { key: "sync", label: t("appTab.sync"), icon: FolderSync },
+    { key: "tasks", label: t("appTab.tasks"), icon: ListChecks },
+    { key: "marks", label: t("appTab.marks"), icon: Bookmark }
   ];
 
   return (

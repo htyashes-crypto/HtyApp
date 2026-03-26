@@ -10,6 +10,8 @@ interface GlobalLibraryPageProps {
   onSelectSkill: (skillId: string) => void;
   detail: GlobalSkillDetail | null;
   onExport: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
 }
 
 const stagger = {
@@ -27,7 +29,7 @@ const fadeLeft = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.25, ease: "easeOut" as const } },
 };
 
-export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, detail, onExport }: GlobalLibraryPageProps) {
+export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, detail, onExport, onDelete, onEdit }: GlobalLibraryPageProps) {
   const { t } = useTranslation();
   return (
     <motion.div className="page three-column-layout library-layout" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -71,8 +73,14 @@ export function GlobalLibraryPage({ skills, selectedSkillId, onSelectSkill, deta
                 </div>
               </div>
               <div className="panel__actions">
+                <button type="button" className="button button--ghost" onClick={onEdit}>
+                  {t("library.editInComposer")}
+                </button>
                 <button type="button" className="button button--ghost" onClick={onExport}>
                   {t("library.exportPackage")}
+                </button>
+                <button type="button" className="button button--ghost button--danger" onClick={onDelete}>
+                  {t("library.deleteSkill")}
                 </button>
               </div>
             </div>

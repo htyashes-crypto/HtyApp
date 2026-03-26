@@ -2,7 +2,7 @@ export type Provider = "codex" | "claude" | "cursor";
 
 export const ALL_PROVIDERS: Provider[] = ["codex", "claude", "cursor"];
 
-export type RouteKey = "overview" | "library" | "projects" | "activity" | "market";
+export type RouteKey = "overview" | "library" | "projects" | "activity" | "market" | "composer";
 export type WorkspaceKind = "project" | "special";
 
 export interface WorkspaceRecord {
@@ -111,6 +111,7 @@ export interface PublishRequest {
   description?: string;
   tags?: string[];
   notes?: string;
+  forceReplace?: boolean;
 }
 
 export interface PublishResponse {
@@ -159,6 +160,7 @@ export interface ExportPackageRequest {
 
 export interface ImportPackageRequest {
   packagePath: string;
+  forceReplace?: boolean;
 }
 
 export interface PackageOperationResponse {
@@ -204,9 +206,37 @@ export interface MarketDownloadRequest {
   packageUrl: string;
   skillId: string;
   version: string;
+  forceReplace?: boolean;
 }
 
 export type MarketInstallStatus = "not_installed" | "installed" | "update_available";
+
+/* ── Composer ── */
+
+export interface ComposerFile {
+  fileName: string;
+  content: string;
+}
+
+export interface ComposerWriteRequest {
+  dirPath: string;
+  files: ComposerFile[];
+}
+
+export interface ComposerResolveRequest {
+  workspaceRoot: string;
+  provider: Provider;
+  skillName: string;
+}
+
+export interface ComposerResolveResult {
+  dirPath: string;
+  exists: boolean;
+}
+
+export interface ComposerListResult {
+  dirs: Array<{ dirName: string; dirPath: string }>;
+}
 
 export interface MarketUploadRequest {
   skillId: string;

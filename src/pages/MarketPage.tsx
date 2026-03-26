@@ -90,13 +90,24 @@ export function MarketPage({ registry, isLoading, error, onRefresh, localLibrary
     onSuccess: () => onDownloadSuccess()
   });
 
-  const handleDownload = (skill: MarketSkillEntry, version: string, packageUrl: string) => {
-    downloadMutation.mutate({
+  const handleDownload = async (skill: MarketSkillEntry, version: string, packageUrl: string) => {
+    const req: MarketDownloadRequest = {
       registryBaseUrl: DEFAULT_REGISTRY_BASE,
       packageUrl,
       skillId: skill.skillId,
       version
-    });
+    };
+    try {
+      await downloadMutation.mutateAsync(req);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("NAME_CONFLICT")) {
+        const confirmed = window.confirm(`全局库中已有同名技能 "${skill.name}"，是否替换？`);
+        if (confirmed) {
+          downloadMutation.mutate({ ...req, forceReplace: true });
+        }
+      }
+    }
   };
 
   if (isLoading) {

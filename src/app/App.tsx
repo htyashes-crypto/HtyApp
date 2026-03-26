@@ -9,6 +9,8 @@ import { MergeConflictDialog } from "../components/dialogs/MergeConflictDialog";
 import { PublishDialog } from "../components/dialogs/PublishDialog";
 import { SettingsDialog } from "../components/dialogs/SettingsDialog";
 import { SyncApp } from "../sync/SyncApp";
+import { TasksApp } from "../tasks/TasksApp";
+import { MarksApp } from "../marks/MarksApp";
 import { api } from "../lib/api";
 import type { MergeSessionSummary } from "../lib/merge-types";
 import { pickExportPackagePath, pickImportPackagePath, pickWorkspaceRoot } from "../lib/dialogs";
@@ -20,6 +22,7 @@ import { GlobalLibraryPage } from "../pages/GlobalLibraryPage";
 import { ProjectsPage } from "../pages/ProjectsPage";
 import { ActivityPage } from "../pages/ActivityPage";
 import { MarketPage } from "../pages/MarketPage";
+import { ComposerPage } from "../pages/ComposerPage";
 
 export function App() {
   const activeTab = useUiStore((s) => s.activeTab);
@@ -29,7 +32,7 @@ export function App() {
     <div className="app-root">
       <AppTabBar />
       <div className="app-root__body">
-        {activeTab === "skill" ? <SkillApp /> : <SyncApp />}
+        {activeTab === "skill" ? <SkillApp /> : activeTab === "sync" ? <SyncApp /> : activeTab === "tasks" ? <TasksApp /> : <MarksApp />}
       </div>
       <UserProfileBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
@@ -347,6 +350,30 @@ function SkillApp() {
     await invalidateCoreQueries();
   };
 
+  const settingsQuery = useQuery({ queryKey: ["app-settings"], queryFn: api.getAppSettings });
+
+  const handleEditInComposer = async () => {
+    const detail = selectedSkillDetailQuery.data;
+    const settings = settingsQuery.data;
+    if (!detail || !settings) return;
+    const latestVersion = detail.versions[0];
+    const firstProvider = latestVersion?.providers[0];
+    if (!firstProvider) return;
+    const fullPath = `${settings.libraryRoot}/${firstProvider.payloadPath}`;
+    useUiStore.getState().openComposer(fullPath, detail.skill.skillId);
+  };
+
+  const handleDeleteSkill = async () => {
+    if (!selectedSkillId) return;
+    const skill = libraryItems.find((s) => s.skillId === selectedSkillId);
+    if (!skill) return;
+    const confirmed = window.confirm(`确认删除 "${skill.name}" 及其所有版本？此操作不可撤销。`);
+    if (!confirmed) return;
+    await api.deleteSkill(selectedSkillId);
+    setSelectedSkillId(null);
+    await invalidateCoreQueries();
+  };
+
   const content = (() => {
     switch (route) {
       case "overview":
@@ -365,6 +392,8 @@ function SkillApp() {
             onSelectSkill={setSelectedSkillId}
             detail={selectedSkillDetailQuery.data ?? null}
             onExport={handleExportPackage}
+            onDelete={handleDeleteSkill}
+            onEdit={handleEditInComposer}
           />
         );
       case "projects":
@@ -405,6 +434,8 @@ function SkillApp() {
             onDownloadSuccess={invalidateCoreQueries}
           />
         );
+      case "composer":
+        return <ComposerPage workspaces={workspaceItems} />;
     }
   })();
 
@@ -421,7 +452,7 @@ function SkillApp() {
         onSelectWorkspace={setSelectedWorkspaceId}
       />
       <main className="main-shell">
-        {route !== "projects" && route !== "market" ? (
+        {route !== "projects" && route !== "market" && route !== "composer" ? (
           <TopBar
             search={search}
             onSearchChange={setSearch}

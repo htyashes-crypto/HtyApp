@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { RouteKey } from "../lib/types";
 
-export type AppTab = "skill" | "sync";
+export type AppTab = "skill" | "sync" | "tasks" | "marks";
 
 interface UiState {
   activeTab: AppTab;
@@ -14,6 +14,9 @@ interface UiState {
   installOpen: boolean;
   selectedInstanceId: string | null;
   autoApprove: boolean;
+  composerSkillDir: string | null;
+  composerSkillId: string | null;
+  composerDirty: boolean;
   setActiveTab: (tab: AppTab) => void;
   setRoute: (route: RouteKey) => void;
   setSearch: (search: string) => void;
@@ -24,6 +27,8 @@ interface UiState {
   openInstall: () => void;
   closeInstall: () => void;
   setAutoApprove: (autoApprove: boolean) => void;
+  openComposer: (skillDir?: string | null, skillId?: string | null) => void;
+  setComposerDirty: (dirty: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -38,6 +43,9 @@ export const useUiStore = create<UiState>()(
       installOpen: false,
       selectedInstanceId: null,
       autoApprove: false,
+      composerSkillDir: null,
+      composerSkillId: null,
+      composerDirty: false,
       setActiveTab: (activeTab) => set({ activeTab }),
       setRoute: (route) => set({ route }),
       setSearch: (search) => set({ search }),
@@ -47,7 +55,9 @@ export const useUiStore = create<UiState>()(
       closePublish: () => set({ publishOpen: false }),
       openInstall: () => set({ installOpen: true }),
       closeInstall: () => set({ installOpen: false }),
-      setAutoApprove: (autoApprove) => set({ autoApprove })
+      setAutoApprove: (autoApprove) => set({ autoApprove }),
+      openComposer: (skillDir, skillId) => set({ route: "composer", composerSkillDir: skillDir ?? null, composerSkillId: skillId ?? null, composerDirty: false }),
+      setComposerDirty: (composerDirty) => set({ composerDirty })
     }),
     {
       name: "hty-ui-settings",

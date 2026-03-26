@@ -106,7 +106,9 @@
     "versionTimeline": "版本时间线",
     "versionTimelineDesc": "查看发布节奏与 provider 覆盖变化",
     "noVersionInfo": "暂无版本信息",
-    "noNotes": "无说明"
+    "noNotes": "无说明",
+    "editInComposer": "编辑",
+    "deleteSkill": "删除"
   },
   "activity": {
     "title": "活动记录",
@@ -169,7 +171,7 @@
     "importPackage": "导入包"
   },
   "sidebar": {
-    "brand": "Hty-Skill 管理器",
+    "brand": "HtyApp",
     "brandDesc": "Global-first skill orchestration",
     "search": "搜索项目实例或路径",
     "navigation": "导航",
@@ -177,6 +179,7 @@
     "library": "全局库",
     "activity": "活动记录",
     "market": "云端市场",
+    "composer": "编辑器",
     "workspace": "工作区",
     "noWorkspace": "还没有接入工作区",
     "currentProjectIndex": "当前项目索引",
@@ -188,7 +191,36 @@
   },
   "appTab": {
     "skill": "Skill",
-    "sync": "Sync"
+    "sync": "Sync",
+    "tasks": "Tasks",
+    "marks": "Marks"
+  },
+  "tasks": {
+    "add": "添加任务",
+    "filter_all": "全部",
+    "filter_todo": "待办",
+    "filter_done": "已完成",
+    "clearDone": "清除已完成",
+    "high": "高",
+    "normal": "中",
+    "low": "低",
+    "titlePlaceholder": "输入任务标题…",
+    "empty": "暂无任务"
+  },
+  "marks": {
+    "workspaces": "工作区",
+    "noWorkspaces": "还没有接入工作区",
+    "addDir": "添加目录",
+    "addFile": "添加文件",
+    "pickDir": "选择要收藏的目录",
+    "pickFile": "选择要收藏的文件",
+    "pickPath": "选择文件或目录",
+    "empty": "暂无书签",
+    "selectWorkspace": "从左侧选择一个工作区",
+    "copyAbsolute": "复制绝对路径",
+    "copyRelative": "复制相对路径",
+    "absolute": "绝对",
+    "relative": "相对"
   },
   "publish": {
     "title": "上传到全局",
@@ -382,6 +414,27 @@
     "blacklistMerge": "合并",
     "blacklistItemCount": "{{count}} 个目录",
     "blacklistNoTemplates": "没有保存的模板。"
+  },
+  "composer": {
+    "title": "Skill 编辑器",
+    "templates": "模板库",
+    "files": "文件",
+    "metadata": "元数据",
+    "addFile": "添加文件",
+    "newFileName": "输入文件名（如 examples.md）",
+    "saveTarget": "保存目标",
+    "workspace": "工作区",
+    "save": "保存到工作区",
+    "saveAndPublish": "保存并发布",
+    "saveSuccess": "已保存到工作区",
+    "saveFailed": "保存失败",
+    "overwriteConfirm": "目标目录 \"{{name}}\" 已存在，是否覆盖？",
+    "editor": "编辑器",
+    "preview": "预览",
+    "newSkill": "新建 Skill",
+    "saveToLibrary": "保存到全局库",
+    "editingLibrarySkill": "全局库编辑模式",
+    "libraryModeHint": "修改将直接保存到全局库中，元数据同步更新。"
   },
   "market": {
     "title": "云端市场",

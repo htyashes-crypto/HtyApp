@@ -7,7 +7,8 @@ import {
   LayoutDashboard,
   LibraryBig,
   Search,
-  Store
+  Store,
+  PenTool
 } from "lucide-react";
 import type { RouteKey, WorkspaceRecord } from "../../lib/types";
 
@@ -39,6 +40,7 @@ export function Sidebar({
     { key: "overview", label: t("sidebar.overview"), icon: LayoutDashboard },
     { key: "library", label: t("sidebar.library"), icon: LibraryBig },
     { key: "market", label: t("sidebar.market"), icon: Store },
+    { key: "composer", label: t("sidebar.composer"), icon: PenTool },
     { key: "activity", label: t("sidebar.activity"), icon: Activity }
   ];
 

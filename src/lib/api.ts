@@ -10,6 +10,11 @@ import type {
   InstallRequest,
   InstallResponse,
   LocalInstance,
+  ComposerFile,
+  ComposerListResult,
+  ComposerResolveRequest,
+  ComposerResolveResult,
+  ComposerWriteRequest,
   MarketDownloadRequest,
   MarketRegistry,
   MarketUploadRequest,
@@ -150,6 +155,40 @@ export const api = {
     return isDesktopRuntime()
       ? call<string>("create_backup", { workspaceRoot, relativePath })
       : mockApi.createBackup(workspaceRoot, relativePath);
+  },
+  /* ── Composer ── */
+
+  async composerReadSkillDir(dirPath: string): Promise<{ files: ComposerFile[] }> {
+    return isDesktopRuntime()
+      ? call<{ files: ComposerFile[] }>("composer_read_skill_dir", { dirPath })
+      : mockApi.composerReadSkillDir(dirPath);
+  },
+  async composerWriteSkillDir(request: ComposerWriteRequest): Promise<{ dirPath: string; message: string }> {
+    return isDesktopRuntime()
+      ? call<{ dirPath: string; message: string }>("composer_write_skill_dir", { request })
+      : mockApi.composerWriteSkillDir(request);
+  },
+  async composerListSkillDirs(workspaceRoot: string, provider: string): Promise<ComposerListResult> {
+    return isDesktopRuntime()
+      ? call<ComposerListResult>("composer_list_skill_dirs", { workspaceRoot, provider })
+      : mockApi.composerListSkillDirs(workspaceRoot, provider);
+  },
+  async composerResolveTargetDir(request: ComposerResolveRequest): Promise<ComposerResolveResult> {
+    return isDesktopRuntime()
+      ? call<ComposerResolveResult>("composer_resolve_target_dir", { request })
+      : mockApi.composerResolveTargetDir(request);
+  },
+
+  async composerUpdateSkillMetadata(request: { skillId: string; name: string; description: string }): Promise<{ skillId: string; message: string }> {
+    return isDesktopRuntime()
+      ? call<{ skillId: string; message: string }>("composer_update_skill_metadata", { request })
+      : mockApi.composerUpdateSkillMetadata(request);
+  },
+
+  async deleteSkill(skillId: string): Promise<{ skillId: string; message: string }> {
+    return isDesktopRuntime()
+      ? call<{ skillId: string; message: string }>("delete_skill", { skillId })
+      : mockApi.deleteSkill(skillId);
   },
   async exportPackage(request: ExportPackageRequest): Promise<PackageOperationResponse> {
     return isDesktopRuntime()

@@ -92,10 +92,22 @@ class DesktopService {
         return this.listActivity();
       case "create_backup":
         return this.createBackup(args.workspaceRoot, args.relativePath);
+      case "delete_skill":
+        return this.deleteSkill(args.skillId);
       case "export_package":
         return this.exportPackage(args.request);
       case "import_package":
         return this.importPackage(args.request);
+      case "composer_read_skill_dir":
+        return this.composerReadSkillDir(args.dirPath);
+      case "composer_write_skill_dir":
+        return this.composerWriteSkillDir(args.request);
+      case "composer_list_skill_dirs":
+        return this.composerListSkillDirs(args.workspaceRoot, args.provider);
+      case "composer_resolve_target_dir":
+        return this.composerResolveTargetDir(args.request);
+      case "composer_update_skill_metadata":
+        return this.composerUpdateSkillMetadata(args.request);
       case "market_fetch_registry":
         return this.marketFetchRegistry(args.registryUrl);
       case "market_download_and_import":
@@ -542,6 +554,24 @@ class DesktopService {
     const data = this.loadLibrary();
     const now = nowIso();
     const name = request.name || index.displayName;
+
+    // Check for name conflict
+    const conflict = data.skills.find((s) => s.skill.name === name);
+    if (conflict) {
+      if (!request.forceReplace) {
+        const err = new Error(`NAME_CONFLICT: 全局库中已有同名技能 "${name}"`);
+        err.code = "NAME_CONFLICT";
+        err.conflictSkillId = conflict.skill.skillId;
+        err.conflictName = conflict.skill.name;
+        throw err;
+      }
+      // Remove conflicting skill
+      this.deleteSkill(conflict.skill.skillId);
+      // Reload library after deletion
+      const freshData = this.loadLibrary();
+      Object.assign(data, freshData);
+    }
+
     const slug = uniqueSlug(data.skills, request.slug || name);
     const skillId = `skill_${randomUUID().replace(/-/g, "")}`;
     const version = "1.0.0";
@@ -995,6 +1025,34 @@ class DesktopService {
     return this.backupTargetForContext(context, target, provider);
   }
 
+  deleteSkill(skillId) {
+    const data = this.loadLibrary();
+    const index = data.skills.findIndex((item) => item.skill.skillId === skillId);
+    if (index === -1) {
+      throw new Error(`skill not found: ${skillId}`);
+    }
+    const removed = data.skills.splice(index, 1)[0];
+
+    // Delete skill directory on disk
+    const skillDir = path.join(this.storeDir, skillId);
+    if (fs.existsSync(skillDir)) {
+      fs.rmSync(skillDir, { recursive: true, force: true });
+    }
+
+    appendActivityRecord(
+      data,
+      "delete",
+      `删除 ${removed.skill.name}`,
+      `删除 ${removed.versions.length} 个版本`
+    );
+    this.saveLibrary(data);
+
+    return {
+      skillId,
+      message: "skill deleted"
+    };
+  }
+
   exportPackage(request) {
     const detail = this.getSkillDetail(request.skillId);
     const version = detail.versions.find((entry) => entry.version === request.version);
@@ -1054,6 +1112,25 @@ class DesktopService {
 
     this.ensureVersionNotExists(manifest.skillId, manifest.version);
     const data = this.loadLibrary();
+
+    // Check for name conflict (different skillId, same name)
+    const conflict = data.skills.find(
+      (s) => s.skill.name === manifest.name && s.skill.skillId !== manifest.skillId
+    );
+    if (conflict) {
+      if (!request.forceReplace) {
+        const err = new Error(`NAME_CONFLICT: 全局库中已有同名技能 "${manifest.name}"`);
+        err.code = "NAME_CONFLICT";
+        err.conflictSkillId = conflict.skill.skillId;
+        err.conflictName = conflict.skill.name;
+        throw err;
+      }
+      // Remove conflicting skill
+      this.deleteSkill(conflict.skill.skillId);
+      // Reload library after deletion
+      const freshData = this.loadLibrary();
+      Object.assign(data, freshData);
+    }
 
     let detail = data.skills.find((item) => item.skill.skillId === manifest.skillId);
     if (!detail) {
@@ -1117,6 +1194,98 @@ class DesktopService {
     };
   }
 
+  /* ── Composer ── */
+
+  composerReadSkillDir(dirPath) {
+    const resolved = path.resolve(dirPath);
+    if (!fs.existsSync(resolved)) {
+      return { files: [] };
+    }
+    const files = [];
+    const entries = fs.readdirSync(resolved, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isFile() && !entry.name.startsWith(".")) {
+        const content = fs.readFileSync(path.join(resolved, entry.name), "utf8");
+        files.push({ fileName: entry.name, content });
+      }
+    }
+    return { files };
+  }
+
+  composerWriteSkillDir(request) {
+    const { dirPath, files } = request;
+    const resolved = path.resolve(dirPath);
+    ensureDir(resolved);
+
+    // Remove files that no longer exist in the new set
+    if (fs.existsSync(resolved)) {
+      const existing = fs.readdirSync(resolved, { withFileTypes: true });
+      const newNames = new Set(files.map((f) => f.fileName));
+      for (const entry of existing) {
+        if (entry.isFile() && !newNames.has(entry.name)) {
+          fs.unlinkSync(path.join(resolved, entry.name));
+        }
+      }
+    }
+
+    // Write all files
+    for (const file of files) {
+      fs.writeFileSync(path.join(resolved, file.fileName), file.content, "utf8");
+    }
+
+    return { dirPath: normalizePath(resolved), message: "skill saved" };
+  }
+
+  composerListSkillDirs(workspaceRoot, provider) {
+    const providerDir = path.join(path.resolve(workspaceRoot), rootRelative(provider));
+    if (!fs.existsSync(providerDir)) {
+      return { dirs: [] };
+    }
+    const dirs = [];
+    const entries = fs.readdirSync(providerDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory() && !entry.name.startsWith(".")) {
+        dirs.push({
+          dirName: entry.name,
+          dirPath: normalizePath(path.join(providerDir, entry.name))
+        });
+      }
+    }
+    return { dirs };
+  }
+
+  composerResolveTargetDir(request) {
+    const { workspaceRoot, provider, skillName } = request;
+    const dirPath = path.join(path.resolve(workspaceRoot), rootRelative(provider), skillName);
+    return {
+      dirPath: normalizePath(dirPath),
+      exists: fs.existsSync(dirPath)
+    };
+  }
+
+  composerUpdateSkillMetadata(request) {
+    const { skillId, name, description } = request;
+    const data = this.loadLibrary();
+    const detail = data.skills.find((s) => s.skill.skillId === skillId);
+    if (!detail) {
+      throw new Error(`skill not found: ${skillId}`);
+    }
+
+    const oldName = detail.skill.name;
+    detail.skill.name = name || detail.skill.name;
+    detail.skill.description = description ?? detail.skill.description;
+
+    appendActivityRecord(
+      data,
+      "edit",
+      `编辑 ${detail.skill.name}`,
+      oldName !== detail.skill.name ? `重命名: ${oldName} → ${detail.skill.name}` : "更新技能内容"
+    );
+    this.saveLibrary(data);
+
+    return { skillId, message: "metadata updated" };
+  }
+
   /* ── Cloud Market ── */
 
   async marketFetchRegistry(registryUrl) {
@@ -1141,7 +1310,7 @@ class DesktopService {
   }
 
   async marketDownloadAndImport(request) {
-    const { registryBaseUrl, packageUrl, skillId, version } = request;
+    const { registryBaseUrl, packageUrl, skillId, version, forceReplace } = request;
 
     const resolvedUrl = packageUrl.startsWith("http")
       ? packageUrl
@@ -1165,7 +1334,7 @@ class DesktopService {
     }
 
     try {
-      const result = this.importPackage({ packagePath: tempFile });
+      const result = this.importPackage({ packagePath: tempFile, forceReplace });
       return result;
     } finally {
       try { fs.unlinkSync(tempFile); } catch { /* ignore */ }

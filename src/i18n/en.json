@@ -106,7 +106,9 @@
     "versionTimeline": "Version Timeline",
     "versionTimelineDesc": "View release rhythm and provider coverage changes",
     "noVersionInfo": "No version information",
-    "noNotes": "No notes"
+    "noNotes": "No notes",
+    "editInComposer": "Edit",
+    "deleteSkill": "Delete"
   },
   "activity": {
     "title": "Activity Log",
@@ -169,7 +171,7 @@
     "importPackage": "Import Package"
   },
   "sidebar": {
-    "brand": "Hty Skill Manager",
+    "brand": "HtyApp",
     "brandDesc": "Global-first skill orchestration",
     "search": "Search project instances or paths",
     "navigation": "Navigation",
@@ -177,6 +179,7 @@
     "library": "Global Library",
     "activity": "Activity",
     "market": "Cloud Market",
+    "composer": "Composer",
     "workspace": "Workspace",
     "noWorkspace": "No workspaces connected yet",
     "currentProjectIndex": "Current Project Index",
@@ -188,7 +191,36 @@
   },
   "appTab": {
     "skill": "Skill",
-    "sync": "Sync"
+    "sync": "Sync",
+    "tasks": "Tasks",
+    "marks": "Marks"
+  },
+  "tasks": {
+    "add": "Add Task",
+    "filter_all": "All",
+    "filter_todo": "Active",
+    "filter_done": "Done",
+    "clearDone": "Clear Done",
+    "high": "High",
+    "normal": "Normal",
+    "low": "Low",
+    "titlePlaceholder": "Enter task title…",
+    "empty": "No tasks yet"
+  },
+  "marks": {
+    "workspaces": "Workspaces",
+    "noWorkspaces": "No workspaces connected",
+    "addDir": "Add Directory",
+    "addFile": "Add File",
+    "pickDir": "Select directory to bookmark",
+    "pickFile": "Select file to bookmark",
+    "pickPath": "Select file or directory",
+    "empty": "No bookmarks yet",
+    "selectWorkspace": "Select a workspace from the sidebar",
+    "copyAbsolute": "Copy absolute path",
+    "copyRelative": "Copy relative path",
+    "absolute": "Absolute",
+    "relative": "Relative"
   },
   "publish": {
     "title": "Publish to Global",
@@ -382,6 +414,27 @@
     "blacklistMerge": "Merge",
     "blacklistItemCount": "{{count}} dirs",
     "blacklistNoTemplates": "No templates saved."
+  },
+  "composer": {
+    "title": "Skill Composer",
+    "templates": "Templates",
+    "files": "Files",
+    "metadata": "Metadata",
+    "addFile": "Add File",
+    "newFileName": "Enter file name (e.g. examples.md)",
+    "saveTarget": "Save Target",
+    "workspace": "Workspace",
+    "save": "Save to Workspace",
+    "saveAndPublish": "Save & Publish",
+    "saveSuccess": "Saved to workspace",
+    "saveFailed": "Save failed",
+    "overwriteConfirm": "Target directory \"{{name}}\" already exists. Overwrite?",
+    "editor": "Editor",
+    "preview": "Preview",
+    "newSkill": "New Skill",
+    "saveToLibrary": "Save to Library",
+    "editingLibrarySkill": "Library Edit Mode",
+    "libraryModeHint": "Changes will be saved directly to the global library with metadata synced."
   },
   "market": {
     "title": "Cloud Market",

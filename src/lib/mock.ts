@@ -715,6 +715,31 @@ export const mockApi: any = {
     return `${workspaceRoot}/.htyskillmanager/backups/mock/${relativePath}`;
   },
 
+  async composerReadSkillDir(_dirPath: string) {
+    return { files: [{ fileName: "SKILL.md", content: "---\nname: example\ndescription: Example skill\n---\n\n# Example\n\nContent here." }] };
+  },
+  async composerWriteSkillDir(_request: any) {
+    return { dirPath: "mock://skill-dir", message: "mock saved" };
+  },
+  async composerListSkillDirs(_workspaceRoot: string, _provider: string) {
+    return { dirs: [{ dirName: "example-skill", dirPath: "mock://example-skill" }] };
+  },
+  async composerResolveTargetDir(_request: any) {
+    return { dirPath: "mock://target", exists: false };
+  },
+
+  async composerUpdateSkillMetadata(_request: { skillId: string; name: string; description: string }) {
+    return { skillId: "mock", message: "metadata updated" };
+  },
+
+  async deleteSkill(skillId: string): Promise<{ skillId: string; message: string }> {
+    const index = state.skills.findIndex((s) => s.skill.skillId === skillId);
+    if (index === -1) throw new Error(`Skill not found: ${skillId}`);
+    const removed = state.skills.splice(index, 1)[0];
+    addActivity("delete", `删除 ${removed.skill.name}`, `删除 ${removed.versions.length} 个版本`);
+    return { skillId, message: "skill deleted" };
+  },
+
   async exportPackage(request: ExportPackageRequest): Promise<PackageOperationResponse> {
     addActivity("export", `导出 ${request.skillId} ${request.version}`, `导出到 ${request.outputPath}`);
     return {
