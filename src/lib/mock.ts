@@ -11,6 +11,9 @@ import {
   type InstallRequest,
   type InstallResponse,
   type LocalInstance,
+  type MarketDownloadRequest,
+  type MarketUploadRequest,
+  type MarketRegistry,
   type PackageOperationResponse,
   type Provider,
   type PublishRequest,
@@ -726,5 +729,93 @@ export const mockApi: any = {
       path: request.packagePath,
       message: "mock imported"
     };
+  },
+
+  /* ── Cloud Market ── */
+
+  async fetchMarketRegistry(_registryUrl: string): Promise<MarketRegistry> {
+    return {
+      schemaVersion: 1,
+      updatedAt: now(),
+      skills: [
+        {
+          skillId: "market_skill_001",
+          slug: "code-review-agent",
+          name: "Code Review Agent",
+          description: "自动化代码审查技能，支持多语言和多框架。",
+          author: "htyashes",
+          tags: ["review", "automation"],
+          latestVersion: "1.0.2",
+          latestProviders: ["claude", "cursor"],
+          versionCount: 2,
+          createdAt: "2026-01-15T10:00:00Z",
+          updatedAt: "2026-03-20T14:00:00Z",
+          downloadCount: 42,
+          versions: [
+            {
+              version: "1.0.2",
+              publishedAt: "2026-03-20T14:00:00Z",
+              notes: "修复格式化边界情况。",
+              providers: ["claude", "cursor"],
+              packageUrl: "packages/code-review-agent/1.0.2.htyskillpkg",
+              packageSize: 15360
+            },
+            {
+              version: "1.0.1",
+              publishedAt: "2026-02-10T08:00:00Z",
+              notes: "新增 Cursor 支持。",
+              providers: ["claude", "cursor"],
+              packageUrl: "packages/code-review-agent/1.0.1.htyskillpkg",
+              packageSize: 14200
+            }
+          ]
+        },
+        {
+          skillId: "market_skill_002",
+          slug: "test-generator",
+          name: "Test Generator",
+          description: "根据代码自动生成单元测试。",
+          author: "htyashes",
+          tags: ["testing", "automation"],
+          latestVersion: "2.0.0",
+          latestProviders: ["codex", "claude", "cursor"],
+          versionCount: 1,
+          createdAt: "2026-02-01T09:00:00Z",
+          updatedAt: "2026-03-15T11:00:00Z",
+          downloadCount: 128,
+          versions: [
+            {
+              version: "2.0.0",
+              publishedAt: "2026-03-15T11:00:00Z",
+              notes: "重构为模板驱动架构。",
+              providers: ["codex", "claude", "cursor"],
+              packageUrl: "packages/test-generator/2.0.0.htyskillpkg",
+              packageSize: 22400
+            }
+          ]
+        }
+      ]
+    };
+  },
+
+  async marketUploadPackage(_request: MarketUploadRequest): Promise<{ message: string }> {
+    addActivity("market_upload", "上传到云端市场", "模拟上传技能包");
+    return { message: "mock upload success" };
+  },
+
+  async marketDownloadAndImport(_request: MarketDownloadRequest): Promise<PackageOperationResponse> {
+    addActivity("market_install", "从市场安装", "模拟下载并导入云端技能包");
+    return {
+      path: "mock://market-download",
+      message: "mock market import"
+    };
+  },
+
+  async getMarketSettings(): Promise<{ registryUrl: string }> {
+    return { registryUrl: "" };
+  },
+
+  async updateMarketSettings(request: { registryUrl: string }): Promise<{ registryUrl: string }> {
+    return { registryUrl: request.registryUrl };
   }
 };

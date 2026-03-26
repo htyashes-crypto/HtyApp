@@ -187,6 +187,9 @@ export function SettingsPage({ dashboard }: SettingsPageProps) {
         </div>
       </section>
 
+      {/* ── 市场注册源 ── */}
+      <MarketRegistrySection />
+
       {/* ── 数据恢复 ── */}
       <section className="panel">
         <div className="panel__header">
@@ -230,5 +233,76 @@ export function SettingsPage({ dashboard }: SettingsPageProps) {
         </ul>
       </section>
     </motion.div>
+  );
+}
+
+const DEFAULT_MARKET_REGISTRY_URL = "https://raw.githubusercontent.com/htyashes-crypto/hty-skill-market/main/registry.json";
+
+function MarketRegistrySection() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const marketSettingsQuery = useQuery({ queryKey: ["market-settings"], queryFn: api.getMarketSettings });
+  const [draftUrl, setDraftUrl] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (marketSettingsQuery.data && !initialized) {
+      setDraftUrl(marketSettingsQuery.data.registryUrl || DEFAULT_MARKET_REGISTRY_URL);
+      setInitialized(true);
+    }
+  }, [marketSettingsQuery.data, initialized]);
+
+  const saveMutation = useMutation({
+    mutationFn: (registryUrl: string) => api.updateMarketSettings({ registryUrl }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["market-settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["market-registry"] })
+      ]);
+    }
+  });
+
+  return (
+    <section className="panel">
+      <div className="panel__header">
+        <div>
+          <h3>{t("settings.marketRegistry")}</h3>
+          <p>{t("settings.marketRegistryDesc")}</p>
+        </div>
+      </div>
+      <div className="bind-panel settings-path-form">
+        <label>
+          <span className="dialog__label">{t("settings.registryUrl")}</span>
+          <input
+            value={draftUrl}
+            onChange={(e) => setDraftUrl(e.target.value)}
+            placeholder={DEFAULT_MARKET_REGISTRY_URL}
+          />
+        </label>
+        {saveMutation.error ? <div className="alert alert--error">{String(saveMutation.error)}</div> : null}
+        {saveMutation.isSuccess ? <div className="alert alert--success">{t("common.save")} ✓</div> : null}
+        <div className="panel__actions settings-actions">
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => saveMutation.mutate(draftUrl.trim())}
+            disabled={saveMutation.isPending || !draftUrl.trim()}
+          >
+            {t("common.save")}
+          </button>
+          <button
+            type="button"
+            className="button button--ghost"
+            onClick={() => {
+              setDraftUrl(DEFAULT_MARKET_REGISTRY_URL);
+              saveMutation.mutate(DEFAULT_MARKET_REGISTRY_URL);
+            }}
+            disabled={saveMutation.isPending}
+          >
+            {t("settings.resetDefault")}
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }

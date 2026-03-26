@@ -19,6 +19,7 @@ import { OverviewPage } from "../pages/OverviewPage";
 import { GlobalLibraryPage } from "../pages/GlobalLibraryPage";
 import { ProjectsPage } from "../pages/ProjectsPage";
 import { ActivityPage } from "../pages/ActivityPage";
+import { MarketPage } from "../pages/MarketPage";
 
 export function App() {
   const activeTab = useUiStore((s) => s.activeTab);
@@ -62,6 +63,14 @@ function SkillApp() {
   const libraryQuery = useQuery({ queryKey: ["library"], queryFn: api.listLibrary });
   const workspacesQuery = useQuery({ queryKey: ["workspaces"], queryFn: api.listWorkspaces });
   const activityQuery = useQuery({ queryKey: ["activity"], queryFn: api.listActivity });
+
+  const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/htyashes-crypto/hty-skill-market/main/registry.json";
+  const marketQuery = useQuery({
+    queryKey: ["market-registry"],
+    queryFn: () => api.fetchMarketRegistry(DEFAULT_REGISTRY_URL),
+    staleTime: 60 * 1000,
+    enabled: route === "market"
+  });
 
   const workspaceItems = workspacesQuery.data ?? [];
   const libraryItems = libraryQuery.data ?? [];
@@ -383,6 +392,19 @@ function SkillApp() {
         );
       case "activity":
         return <ActivityPage activities={activityQuery.data ?? []} />;
+      case "market":
+        return (
+          <MarketPage
+            registry={marketQuery.data ?? null}
+            isLoading={marketQuery.isLoading}
+            error={marketQuery.error}
+            onRefresh={async () => {
+              await queryClient.invalidateQueries({ queryKey: ["market-registry"] });
+            }}
+            localLibrary={libraryItems}
+            onDownloadSuccess={invalidateCoreQueries}
+          />
+        );
     }
   })();
 
@@ -399,7 +421,7 @@ function SkillApp() {
         onSelectWorkspace={setSelectedWorkspaceId}
       />
       <main className="main-shell">
-        {route !== "projects" ? (
+        {route !== "projects" && route !== "market" ? (
           <TopBar
             search={search}
             onSearchChange={setSearch}

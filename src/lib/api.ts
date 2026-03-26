@@ -10,6 +10,9 @@ import type {
   InstallRequest,
   InstallResponse,
   LocalInstance,
+  MarketDownloadRequest,
+  MarketRegistry,
+  MarketUploadRequest,
   PackageOperationResponse,
   PublishRequest,
   PublishResponse,
@@ -157,5 +160,33 @@ export const api = {
     return isDesktopRuntime()
       ? call<PackageOperationResponse>("import_package", { request })
       : mockApi.importPackage(request);
+  },
+
+  /* ── Cloud Market ── */
+
+  async fetchMarketRegistry(registryUrl: string): Promise<MarketRegistry> {
+    return isDesktopRuntime()
+      ? call<MarketRegistry>("market_fetch_registry", { registryUrl })
+      : mockApi.fetchMarketRegistry(registryUrl);
+  },
+  async marketDownloadAndImport(request: MarketDownloadRequest): Promise<PackageOperationResponse> {
+    return isDesktopRuntime()
+      ? call<PackageOperationResponse>("market_download_and_import", { request })
+      : mockApi.marketDownloadAndImport(request);
+  },
+  async marketUploadPackage(request: MarketUploadRequest): Promise<{ message: string }> {
+    return isDesktopRuntime()
+      ? call<{ message: string }>("market_upload_package", { request })
+      : mockApi.marketUploadPackage(request);
+  },
+  async getMarketSettings(): Promise<{ registryUrl: string }> {
+    return isDesktopRuntime()
+      ? call<{ registryUrl: string }>("get_market_settings")
+      : mockApi.getMarketSettings();
+  },
+  async updateMarketSettings(request: { registryUrl: string }): Promise<{ registryUrl: string }> {
+    return isDesktopRuntime()
+      ? call<{ registryUrl: string }>("update_market_settings", { request })
+      : mockApi.updateMarketSettings(request);
   }
 };

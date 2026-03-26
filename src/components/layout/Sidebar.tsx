@@ -6,7 +6,8 @@ import {
   ChevronRight,
   LayoutDashboard,
   LibraryBig,
-  Search
+  Search,
+  Store
 } from "lucide-react";
 import type { RouteKey, WorkspaceRecord } from "../../lib/types";
 
@@ -37,6 +38,7 @@ export function Sidebar({
   const routes: Array<{ key: RouteKey; label: string; icon: typeof LayoutDashboard }> = [
     { key: "overview", label: t("sidebar.overview"), icon: LayoutDashboard },
     { key: "library", label: t("sidebar.library"), icon: LibraryBig },
+    { key: "market", label: t("sidebar.market"), icon: Store },
     { key: "activity", label: t("sidebar.activity"), icon: Activity }
   ];
 

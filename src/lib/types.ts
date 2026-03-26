@@ -2,7 +2,7 @@ export type Provider = "codex" | "claude" | "cursor";
 
 export const ALL_PROVIDERS: Provider[] = ["codex", "claude", "cursor"];
 
-export type RouteKey = "overview" | "library" | "projects" | "activity";
+export type RouteKey = "overview" | "library" | "projects" | "activity" | "market";
 export type WorkspaceKind = "project" | "special";
 
 export interface WorkspaceRecord {
@@ -164,4 +164,56 @@ export interface ImportPackageRequest {
 export interface PackageOperationResponse {
   path: string;
   message: string;
+}
+
+/* ── Cloud Market ── */
+
+export interface MarketSkillVersion {
+  version: string;
+  publishedAt: string;
+  notes: string;
+  providers: Provider[];
+  packageUrl: string;
+  packageSize: number;
+}
+
+export interface MarketSkillEntry {
+  skillId: string;
+  slug: string;
+  name: string;
+  description: string;
+  author: string;
+  tags: string[];
+  latestVersion: string;
+  latestProviders: Provider[];
+  versionCount: number;
+  createdAt: string;
+  updatedAt: string;
+  downloadCount: number;
+  versions: MarketSkillVersion[];
+}
+
+export interface MarketRegistry {
+  schemaVersion: number;
+  updatedAt: string;
+  skills: MarketSkillEntry[];
+}
+
+export interface MarketDownloadRequest {
+  registryBaseUrl: string;
+  packageUrl: string;
+  skillId: string;
+  version: string;
+}
+
+export type MarketInstallStatus = "not_installed" | "installed" | "update_available";
+
+export interface MarketUploadRequest {
+  skillId: string;
+  version: string;
+  githubToken: string;
+  owner: string;
+  repo: string;
+  branch?: string;
+  author?: string;
 }

@@ -55,10 +55,10 @@ function registerIpcHandlers() {
 
     try {
       if (payload.command.startsWith("sync_")) {
-        return syncService.invoke(payload.command, payload.args || {});
+        return await syncService.invoke(payload.command, payload.args || {});
       }
 
-      return service.invoke(payload.command, payload.args || {});
+      return await service.invoke(payload.command, payload.args || {});
     } catch (error) {
       console.error(`[MAIN] hty:invoke "${payload.command}" failed:`, error);
       throw error;

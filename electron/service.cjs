@@ -96,6 +96,16 @@ class DesktopService {
         return this.exportPackage(args.request);
       case "import_package":
         return this.importPackage(args.request);
+      case "market_fetch_registry":
+        return this.marketFetchRegistry(args.registryUrl);
+      case "market_download_and_import":
+        return this.marketDownloadAndImport(args.request);
+      case "market_upload_package":
+        return this.marketUploadPackage(args.request);
+      case "get_market_settings":
+        return this.getMarketSettings();
+      case "update_market_settings":
+        return this.updateMarketSettings(args.request);
       default:
         throw new Error(`unknown desktop command: ${command}`);
     }
@@ -1105,6 +1115,236 @@ class DesktopService {
       path: normalizePath(packagePath),
       message: "package imported"
     };
+  }
+
+  /* ── Cloud Market ── */
+
+  async marketFetchRegistry(registryUrl) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    try {
+      const bustUrl = registryUrl + (registryUrl.includes("?") ? "&" : "?") + "_t=" + Date.now();
+      const response = await fetch(bustUrl, {
+        signal: controller.signal,
+        headers: { "Cache-Control": "no-cache" }
+      });
+      if (response.status === 404) {
+        return { schemaVersion: 1, updatedAt: nowIso(), skills: [] };
+      }
+      if (!response.ok) {
+        throw new Error(`registry request failed: ${response.status} ${response.statusText}`);
+      }
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async marketDownloadAndImport(request) {
+    const { registryBaseUrl, packageUrl, skillId, version } = request;
+
+    const resolvedUrl = packageUrl.startsWith("http")
+      ? packageUrl
+      : `${registryBaseUrl.replace(/\/[^/]*$/, "/")}${packageUrl}`;
+
+    const cacheDir = path.join(this.baseDir, "market-cache");
+    ensureDir(cacheDir);
+    const tempFile = path.join(cacheDir, `${skillId}-${version}.htyskillpkg`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000);
+    try {
+      const response = await fetch(resolvedUrl, { signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(`package download failed: ${response.status} ${response.statusText}`);
+      }
+      const buffer = Buffer.from(await response.arrayBuffer());
+      fs.writeFileSync(tempFile, buffer);
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    try {
+      const result = this.importPackage({ packagePath: tempFile });
+      return result;
+    } finally {
+      try { fs.unlinkSync(tempFile); } catch { /* ignore */ }
+    }
+  }
+
+  getMarketSettings() {
+    const bootstrap = this.loadBootstrapConfig();
+    return {
+      registryUrl: bootstrap.market_registry_url || ""
+    };
+  }
+
+  updateMarketSettings(request) {
+    const bootstrap = this.loadBootstrapConfig();
+    bootstrap.market_registry_url = request.registryUrl || "";
+    this.writeBootstrapConfig(bootstrap);
+    return { registryUrl: bootstrap.market_registry_url };
+  }
+
+  async marketUploadPackage(request) {
+    const { skillId, version, githubToken, owner, repo, branch } = request;
+
+    const detail = this.getLibraryDetailRecord(skillId);
+    const versionRecord = detail.versions.find((v) => v.version === version);
+    if (!versionRecord) {
+      throw new Error(`version not found: ${version}`);
+    }
+
+    const exportedAt = nowIso();
+    const packageData = {
+      schemaVersion: 1,
+      exportedAt,
+      manifest: {
+        schemaVersion: 1,
+        exportedAt,
+        skillId: detail.skill.skillId,
+        slug: detail.skill.slug,
+        name: detail.skill.name,
+        description: detail.skill.description,
+        tags: detail.skill.tags,
+        version: versionRecord.version,
+        publishedAt: versionRecord.publishedAt,
+        notes: versionRecord.notes,
+        publishedFromWorkspaceId: versionRecord.publishedFromWorkspaceId,
+        variants: versionRecord.providers
+      },
+      payloads: versionRecord.providers.map((variant) => ({
+        provider: variant.provider,
+        displayName: variant.displayName,
+        files: collectFiles(path.join(this.baseDir, variant.payloadPath))
+      }))
+    };
+
+    const packageJson = JSON.stringify(packageData, null, 2);
+    const packageBase64 = Buffer.from(packageJson).toString("base64");
+    const packagePath = `packages/${detail.skill.slug}/${version}.htyskillpkg`;
+    const branchName = branch || "main";
+    const apiBase = `https://api.github.com/repos/${owner}/${repo}`;
+    const headers = {
+      Authorization: `Bearer ${githubToken}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+
+    // 1. Upload package file
+    const existingPkg = await fetch(`${apiBase}/contents/${packagePath}?ref=${branchName}`, { headers }).catch(() => null);
+    const existingPkgData = existingPkg?.ok ? await existingPkg.json() : null;
+
+    const putPkgBody = {
+      message: `Upload ${detail.skill.name} ${version}`,
+      content: packageBase64,
+      branch: branchName
+    };
+    if (existingPkgData?.sha) {
+      putPkgBody.sha = existingPkgData.sha;
+    }
+
+    const pkgResponse = await fetch(`${apiBase}/contents/${packagePath}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(putPkgBody)
+    });
+    if (!pkgResponse.ok) {
+      const err = await pkgResponse.text();
+      throw new Error(`Failed to upload package: ${pkgResponse.status} ${err}`);
+    }
+
+    // 2. Get current registry.json
+    const registryPath = "registry.json";
+    const existingReg = await fetch(`${apiBase}/contents/${registryPath}?ref=${branchName}`, { headers }).catch(() => null);
+    const existingRegData = existingReg?.ok ? await existingReg.json() : null;
+
+    let registry = { schemaVersion: 1, updatedAt: exportedAt, skills: [] };
+    if (existingRegData?.content) {
+      try {
+        registry = JSON.parse(Buffer.from(existingRegData.content, "base64").toString("utf8"));
+      } catch { /* start fresh */ }
+    }
+
+    // 3. Update registry entry
+    const packageSize = Buffer.byteLength(packageJson, "utf8");
+    const newMarketVersion = {
+      version: versionRecord.version,
+      publishedAt: versionRecord.publishedAt,
+      notes: versionRecord.notes,
+      providers: versionRecord.providers.map((p) => p.provider),
+      packageUrl: packagePath,
+      packageSize
+    };
+
+    let skillEntry = registry.skills.find((s) => s.skillId === skillId);
+    if (!skillEntry) {
+      skillEntry = {
+        skillId: detail.skill.skillId,
+        slug: detail.skill.slug,
+        name: detail.skill.name,
+        description: detail.skill.description,
+        author: request.author || "unknown",
+        tags: detail.skill.tags,
+        latestVersion: version,
+        latestProviders: versionRecord.providers.map((p) => p.provider),
+        versionCount: 0,
+        createdAt: detail.skill.createdAt,
+        updatedAt: exportedAt,
+        downloadCount: 0,
+        versions: []
+      };
+      registry.skills.unshift(skillEntry);
+    }
+
+    const existingVersionIndex = skillEntry.versions.findIndex((v) => v.version === version);
+    if (existingVersionIndex >= 0) {
+      skillEntry.versions[existingVersionIndex] = newMarketVersion;
+    } else {
+      skillEntry.versions.unshift(newMarketVersion);
+    }
+    skillEntry.latestVersion = skillEntry.versions[0]?.version || version;
+    skillEntry.latestProviders = skillEntry.versions[0]?.providers || [];
+    skillEntry.versionCount = skillEntry.versions.length;
+    skillEntry.updatedAt = exportedAt;
+    skillEntry.name = detail.skill.name;
+    skillEntry.description = detail.skill.description;
+    skillEntry.tags = detail.skill.tags;
+    registry.updatedAt = exportedAt;
+
+    // 4. Upload updated registry.json
+    const registryBase64 = Buffer.from(JSON.stringify(registry, null, 2)).toString("base64");
+    const putRegBody = {
+      message: `Update registry: ${detail.skill.name} ${version}`,
+      content: registryBase64,
+      branch: branchName
+    };
+    if (existingRegData?.sha) {
+      putRegBody.sha = existingRegData.sha;
+    }
+
+    const regResponse = await fetch(`${apiBase}/contents/${registryPath}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(putRegBody)
+    });
+    if (!regResponse.ok) {
+      const err = await regResponse.text();
+      throw new Error(`Failed to update registry: ${regResponse.status} ${err}`);
+    }
+
+    // 5. Record activity
+    const data = this.loadLibrary();
+    appendActivityRecord(
+      data,
+      "market_upload",
+      `上传 ${detail.skill.name} ${version} 到云端市场`,
+      `已推送到 ${owner}/${repo}`
+    );
+    this.saveLibrary(data);
+
+    return { message: `Successfully uploaded ${detail.skill.name} ${version}` };
   }
 
   getLibraryDetailRecord(skillId) {
