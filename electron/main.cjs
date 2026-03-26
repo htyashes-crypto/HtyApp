@@ -19,6 +19,7 @@ function createWindow() {
     minHeight: 760,
     show: false,
     title: "Hty-Skill 管理器",
+    icon: path.join(__dirname, "..", "build", "htyapp-icon.ico"),
     backgroundColor: "#11151b",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="高洁蓝玫瑰图标">
+  <defs>
+    <!-- 深邃夜空底，衬托冰蓝花瓣 -->
+    <radialGradient id="bg" cx="0.48" cy="0.42" r="0.78">
+      <stop offset="0%" stop-color="#1a2848"/>
+      <stop offset="55%" stop-color="#0d1428"/>
+      <stop offset="100%" stop-color="#060a14"/>
+    </radialGradient>
+
+    <!-- 外瓣：冰晶受光 -->
+    <radialGradient id="petalOuterLit" cx="0.28" cy="0.18" r="0.92">
+      <stop offset="0%" stop-color="#f0f8ff"/>
+      <stop offset="35%" stop-color="#a8d8f0"/>
+      <stop offset="70%" stop-color="#4a8ec4"/>
+      <stop offset="100%" stop-color="#1e4a72"/>
+    </radialGradient>
+    <radialGradient id="petalOuterShade" cx="0.32" cy="0.22" r="0.88">
+      <stop offset="0%" stop-color="#c8e8f8"/>
+      <stop offset="45%" stop-color="#6eb0d8"/>
+      <stop offset="100%" stop-color="#1a3a5c"/>
+    </radialGradient>
+
+    <!-- 中瓣：蓝宝石调 -->
+    <radialGradient id="petalMidLit" cx="0.3" cy="0.2" r="0.82">
+      <stop offset="0%" stop-color="#d4eefc"/>
+      <stop offset="50%" stop-color="#5c9fd4"/>
+      <stop offset="100%" stop-color="#245880"/>
+    </radialGradient>
+    <radialGradient id="petalMidShade" cx="0.34" cy="0.24" r="0.8">
+      <stop offset="0%" stop-color="#9ccce8"/>
+      <stop offset="55%" stop-color="#3e7aac"/>
+      <stop offset="100%" stop-color="#143450"/>
+    </radialGradient>
+
+    <!-- 内瓣与卷边：偏靛，显“高洁” -->
+    <radialGradient id="petalInnerLit" cx="0.38" cy="0.28" r="0.72">
+      <stop offset="0%" stop-color="#b8dcfc"/>
+      <stop offset="45%" stop-color="#4a88c8"/>
+      <stop offset="100%" stop-color="#1a4060"/>
+    </radialGradient>
+    <radialGradient id="petalInnerDeep" cx="0.4" cy="0.3" r="0.7">
+      <stop offset="0%" stop-color="#7cb0dc"/>
+      <stop offset="100%" stop-color="#102838"/>
+    </radialGradient>
+
+    <!-- 花心幽光 -->
+    <radialGradient id="heartGlow" cx="0.45" cy="0.42" r="0.5">
+      <stop offset="0%" stop-color="#6ab0e0" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#4a90c8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 丝绸边缘高光（沿线性扫过瓣缘） -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="14" flood-color="#020810" flood-opacity="0.45"/>
+    </filter>
+    <filter id="petalShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="1" dy="4" stdDeviation="8" flood-color="#020810" flood-opacity="0.38"/>
+    </filter>
+
+    <radialGradient id="void" cx="0.5" cy="0.48" r="0.55">
+      <stop offset="0%" stop-color="#040c18"/>
+      <stop offset="70%" stop-color="#081828"/>
+      <stop offset="100%" stop-color="#081828" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <circle cx="512" cy="498" r="360" fill="url(#heartGlow)"/>
+
+  <!-- 最外圈 6 片大瓣，略舒展 -->
+  <g filter="url(#softShadow)">
+    <path d="M512 520 C568 432 668 288 776 198 C848 218 898 288 904 368 C872 512 760 642 612 718 C556 748 508 762 468 766 C472 682 486 602 512 520 Z" fill="url(#petalOuterLit)"/>
+    <path d="M512 520 C566 434 662 294 768 206 C838 226 886 292 896 370 C866 508 758 636 614 710 C560 738 514 752 476 756 C480 676 494 598 512 520 Z" fill="url(#petalOuterShade)" transform="rotate(60 512 512)"/>
+    <path d="M512 520 C564 436 656 298 760 212 C830 232 878 296 888 372 C860 506 754 632 612 704 C558 732 514 746 478 750 C482 672 496 596 512 520 Z" fill="url(#petalOuterShade)" transform="rotate(120 512 512)"/>
+    <path d="M512 520 C568 432 668 288 776 198 C846 218 896 286 902 366 C872 510 762 640 614 714 C558 744 510 758 470 762 C474 680 488 600 512 520 Z" fill="url(#petalOuterLit)" transform="rotate(180 512 512)"/>
+    <path d="M512 520 C566 434 662 294 768 206 C836 226 884 290 894 368 C864 504 756 630 616 702 C562 730 518 744 482 748 C486 670 500 594 512 520 Z" fill="url(#petalOuterShade)" transform="rotate(240 512 512)"/>
+    <path d="M512 520 C564 436 656 298 760 212 C828 232 876 298 886 374 C858 508 752 634 612 706 C558 734 516 748 480 752 C484 674 498 598 512 520 Z" fill="url(#petalOuterShade)" transform="rotate(300 512 512)"/>
+  </g>
+
+  <!-- 第二圈 5 片中瓣 -->
+  <g filter="url(#petalShadow)">
+    <path d="M514 512 C548 456 624 352 702 274 C758 292 802 342 812 404 C786 498 712 582 616 638 C572 664 532 678 498 682 C498 628 504 572 514 512 Z" fill="url(#petalMidLit)"/>
+    <path d="M512 512 C544 458 616 358 690 282 C744 298 786 346 798 406 C774 496 704 578 610 632 C568 658 530 672 498 676 C498 624 504 570 512 512 Z" fill="url(#petalMidShade)" transform="rotate(72 512 512)"/>
+    <path d="M512 512 C542 460 612 362 684 288 C736 304 778 350 790 410 C766 498 698 578 606 630 C564 656 528 670 498 674 C498 622 504 568 512 512 Z" fill="url(#petalMidShade)" transform="rotate(144 512 512)"/>
+    <path d="M512 512 C546 456 622 352 700 276 C754 292 798 342 808 404 C782 498 710 580 614 636 C570 662 532 676 500 680 C500 626 506 570 512 512 Z" fill="url(#petalMidShade)" transform="rotate(216 512 512)"/>
+    <path d="M512 512 C544 458 616 358 690 282 C744 298 786 346 798 406 C774 496 704 578 610 632 C568 658 530 672 498 676 C498 624 504 570 512 512 Z" fill="url(#petalMidLit)" transform="rotate(288 512 512)"/>
+  </g>
+
+  <!-- 内层卷瓣 5 片 -->
+  <g>
+    <path d="M512 505 C532 472 572 418 618 382 C652 388 678 418 682 456 C668 510 624 552 568 572 C540 580 518 572 508 548 C502 530 504 520 512 505 Z" fill="url(#petalInnerLit)"/>
+    <path d="M512 505 C530 474 568 422 612 388 C644 394 670 422 674 458 C660 510 618 550 564 568 C538 576 518 568 510 546 C504 528 506 518 512 505 Z" fill="url(#petalInnerDeep)" transform="rotate(72 512 512)"/>
+    <path d="M512 505 C530 474 568 422 612 388 C644 394 670 422 674 458 C660 510 618 550 564 568 C538 576 518 568 510 546 C504 528 506 518 512 505 Z" fill="url(#petalInnerDeep)" transform="rotate(144 512 512)"/>
+    <path d="M512 505 C530 474 568 422 612 388 C644 394 670 422 674 458 C660 510 618 550 564 568 C538 576 518 568 510 546 C504 528 506 518 512 505 Z" fill="url(#petalInnerDeep)" transform="rotate(216 512 512)"/>
+    <path d="M512 505 C532 472 572 418 618 382 C652 388 678 418 682 456 C668 510 624 552 568 572 C540 580 518 572 508 548 C502 530 504 520 512 505 Z" fill="url(#petalInnerLit)" transform="rotate(288 512 512)"/>
+  </g>
+
+  <!-- 螺旋心：三层小瓣 -->
+  <g filter="url(#petalShadow)">
+    <path d="M498 488 C486 452 482 412 492 386 C506 372 528 372 542 386 C558 408 556 444 542 478 C534 492 518 496 498 488 Z" fill="url(#petalInnerLit)" transform="rotate(-12 512 512)"/>
+    <path d="M528 498 C552 474 582 448 606 436 C626 440 636 462 628 484 C612 514 582 534 548 540 C528 538 522 520 528 498 Z" fill="url(#petalInnerDeep)" transform="rotate(8 512 512)"/>
+    <path d="M520 532 C532 558 542 588 540 612 C530 628 508 630 492 618 C474 598 472 568 482 536 C488 522 504 518 520 532 Z" fill="url(#petalInnerDeep)" transform="rotate(95 512 512)"/>
+    <path d="M472 520 C448 542 418 564 392 572 C376 566 370 546 380 526 C396 496 428 478 462 472 C478 474 482 492 472 520 Z" fill="url(#petalInnerLit)" transform="rotate(188 512 512)"/>
+  </g>
+
+  <!-- 最深花心 -->
+  <circle cx="512" cy="512" r="34" fill="url(#void)"/>
+  <circle cx="512" cy="512" r="14" fill="#0a1828" opacity="0.85"/>
+
+  <!-- 瓣缘微光（半透明叠层） -->
+  <ellipse cx="512" cy="420" rx="180" ry="120" fill="url(#sheen)" transform="rotate(-8 512 512)" opacity="0.9"/>
+</svg>

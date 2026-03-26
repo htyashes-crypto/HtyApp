@@ -1,13 +1,14 @@
 import { useState, useCallback, useMemo, useRef, useEffect, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download, Upload, Search, ChevronDown, ChevronUp, Save, Trash2, Eraser, X } from "lucide-react";
+import { RefreshCw, Download, Upload, Search, ChevronDown, ChevronUp, Save, Trash2, Eraser, X, LoaderCircle } from "lucide-react";
 import { syncApi } from "../lib/sync-api";
 import { useSyncUiStore } from "../state/sync-ui-store";
 import { useSyncEvent } from "../hooks/useSyncEvents";
 import { DiffViewerDialog } from "../components/DiffViewerDialog";
 import { TextPreviewDialog } from "../components/TextPreviewDialog";
-import type { SyncProject, DiffEntry, SyncMode, FilterScheme, DiffTexts } from "../lib/sync-types";
+import { SyncProgressDialog } from "../components/SyncProgressDialog";
+import type { SyncProject, DiffEntry, SyncMode, SyncDirection, SyncSummary, FilterScheme, DiffTexts } from "../lib/sync-types";
 
 // ==================== Constants ====================
 
@@ -152,9 +153,10 @@ interface DiffRowProps {
   entry: DiffEntry;
   onSync: (entry: DiffEntry, direction: "RepoToProject" | "ProjectToRepo") => void;
   onContextMenu: (e: React.MouseEvent, entry: DiffEntry) => void;
+  isSyncing: boolean;
 }
 
-const DiffRow = memo(function DiffRow({ entry, onSync, onContextMenu }: DiffRowProps) {
+const DiffRow = memo(function DiffRow({ entry, onSync, onContextMenu, isSyncing }: DiffRowProps) {
   const { t } = useTranslation();
   return (
     <div
@@ -169,12 +171,18 @@ const DiffRow = memo(function DiffRow({ entry, onSync, onContextMenu }: DiffRowP
       <span className="sync-diff-col--size">{(entry.sizeBytes / 1024).toFixed(0)} KB</span>
       <span className="sync-diff-col--changes">{entry.codeChangeSummary}</span>
       <span className="sync-diff-col--actions">
-        <button className="sync-row-btn" onClick={() => onSync(entry, "RepoToProject")} title={t("sync.updateFromRepo")}>
-          <Download size={12} />
-        </button>
-        <button className="sync-row-btn" onClick={() => onSync(entry, "ProjectToRepo")} title={t("sync.applyToRepo")}>
-          <Upload size={12} />
-        </button>
+        {isSyncing ? (
+          <LoaderCircle size={14} className="spin" style={{ color: "var(--brand-b)" }} />
+        ) : (
+          <>
+            <button className="sync-row-btn" onClick={() => onSync(entry, "RepoToProject")} title={t("sync.updateFromRepo")}>
+              <Download size={12} />
+            </button>
+            <button className="sync-row-btn" onClick={() => onSync(entry, "ProjectToRepo")} title={t("sync.applyToRepo")}>
+              <Upload size={12} />
+            </button>
+          </>
+        )}
       </span>
     </div>
   );
@@ -291,6 +299,13 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
   } | null>(null);
   const [previewDialog, setPreviewDialog] = useState<{ title: string; text: string } | null>(null);
 
+  // --- Sync progress dialog state ---
+  const [syncDialog, setSyncDialog] = useState<{
+    direction: SyncDirection;
+    progress: { done: number; total: number };
+    summary: SyncSummary | null;
+  } | null>(null);
+
   const schemesQuery = useQuery({
     queryKey: ["sync-filter-schemes"],
     queryFn: syncApi.loadFilterSchemes,
@@ -361,6 +376,14 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
 
   useSyncEvent("hty:sync:scan-progress", handleScanProgress);
 
+  // --- Bulk sync progress ---
+  const handleBulkProgress = useCallback((data: unknown) => {
+    const { done, total } = data as { done: number; total: number };
+    setSyncDialog(prev => prev ? { ...prev, progress: { done, total } } : prev);
+  }, []);
+
+  useSyncEvent("hty:sync:bulk-progress", handleBulkProgress);
+
   const diffsQuery = useQuery({
     queryKey: ["sync-diffs", project.path, repoPath, syncMode],
     queryFn: async () => {
@@ -402,16 +425,31 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
     queryClient.invalidateQueries({ queryKey: ["sync-diffs", project.path, repoPath, syncMode] });
   };
 
-  const handleBulkSync = async (direction: "RepoToProject" | "ProjectToRepo") => {
+  const handleBulkSync = async (direction: SyncDirection) => {
     const entries = filteredDiffs.map((d) => d.relativePath);
     if (!entries.length) return;
-    await syncApi.bulkSync({ entries, projectRoot: project.path, repoRoot: repoPath, direction, blacklist: [] });
-    handleRefresh();
+    setSyncDialog({ direction, progress: { done: 0, total: entries.length }, summary: null });
+    try {
+      const result = await syncApi.bulkSync({ entries, projectRoot: project.path, repoRoot: repoPath, direction, blacklist: [] });
+      setSyncDialog(prev => prev ? { ...prev, summary: result } : prev);
+    } catch {
+      setSyncDialog(null);
+    }
   };
 
-  const handleSingleSync = useCallback(async (entry: DiffEntry, direction: "RepoToProject" | "ProjectToRepo") => {
-    await syncApi.bulkSync({ entries: [entry.relativePath], projectRoot: project.path, repoRoot: repoPath, direction, blacklist: [] });
+  const handleSyncDialogClose = useCallback(() => {
+    setSyncDialog(null);
     queryClient.invalidateQueries({ queryKey: ["sync-diffs", project.path, repoPath, syncMode] });
+  }, [queryClient, project.path, repoPath, syncMode]);
+
+  const handleSingleSync = useCallback(async (entry: DiffEntry, direction: SyncDirection) => {
+    setSyncDialog({ direction, progress: { done: 0, total: 1 }, summary: null });
+    try {
+      const result = await syncApi.bulkSync({ entries: [entry.relativePath], projectRoot: project.path, repoRoot: repoPath, direction, blacklist: [] });
+      setSyncDialog(prev => prev ? { ...prev, progress: { done: 1, total: 1 }, summary: result } : prev);
+    } catch {
+      setSyncDialog(null);
+    }
   }, [project.path, repoPath, syncMode, queryClient]);
 
   // --- Context menu handler ---
@@ -533,10 +571,10 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
           {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />} {t("sync.filters")}
         </button>
         <div className="sync-pending-toolbar__spacer" />
-        <button className="button button--primary" onClick={() => handleBulkSync("RepoToProject")} disabled={isScanning}>
+        <button className="button button--primary" onClick={() => handleBulkSync("RepoToProject")} disabled={isScanning || syncDialog !== null}>
           <Download size={14} /> {t("sync.updateFromRepo")}
         </button>
-        <button className="button button--ghost" onClick={() => handleBulkSync("ProjectToRepo")} disabled={isScanning}>
+        <button className="button button--ghost" onClick={() => handleBulkSync("ProjectToRepo")} disabled={isScanning || syncDialog !== null}>
           <Upload size={14} /> {t("sync.applyToRepo")}
         </button>
       </div>
@@ -607,7 +645,7 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
           <div style={{ height: totalHeight, position: "relative" }}>
             <div style={{ position: "absolute", top: offsetY, left: 0, right: 0 }}>
               {visibleSlice.map((entry) => (
-                <DiffRow key={entry.relativePath} entry={entry} onSync={handleSingleSync} onContextMenu={handleContextMenu} />
+                <DiffRow key={entry.relativePath} entry={entry} onSync={handleSingleSync} onContextMenu={handleContextMenu} isSyncing={false} />
               ))}
             </div>
           </div>
@@ -650,6 +688,15 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
         title={previewDialog?.title ?? ""}
         text={previewDialog?.text ?? ""}
         onClose={() => setPreviewDialog(null)}
+      />
+
+      {/* ========== Sync Progress Dialog ========== */}
+      <SyncProgressDialog
+        open={syncDialog !== null}
+        direction={syncDialog?.direction ?? "RepoToProject"}
+        progress={syncDialog?.progress ?? { done: 0, total: 0 }}
+        summary={syncDialog?.summary ?? null}
+        onClose={handleSyncDialogClose}
       />
     </div>
   );
