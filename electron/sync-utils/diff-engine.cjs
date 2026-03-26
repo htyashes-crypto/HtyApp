@@ -3,7 +3,7 @@ const path = require("node:path");
 const { loadCache, saveCache, getOrComputeHash, normalizeRelative: normRelCache } = require("./file-hash-cache.cjs");
 const { matchesMode, enumerateFilesRecursive, normalizeRel } = require("./file-sync.cjs");
 
-const EXCLUDED_DIRS = new Set([".git", "bin", "obj", "library", "temp"]);
+const EXCLUDED_DIRS = new Set([".git", "bin", "obj", "library", "temp", "node_modules", ".vs", "logs", "release"]);
 
 const TEXT_EXTS = new Set([
   ".cs", ".json", ".md", ".txt", ".xml", ".yaml", ".yml", ".cfg", ".ini", ".log",

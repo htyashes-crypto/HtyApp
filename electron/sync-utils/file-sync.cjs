@@ -108,6 +108,8 @@ function deleteFileSafe(filePath) {
   } catch { /* ignore */ }
 }
 
+const SKIP_DIRS = new Set([".git", "node_modules", ".vs", "release"]);
+
 function enumerateFilesRecursive(dir) {
   const results = [];
   if (!fs.existsSync(dir)) return results;
@@ -117,6 +119,9 @@ function enumerateFilesRecursive(dir) {
     let entries;
     try { entries = fs.readdirSync(current, { withFileTypes: true }); } catch { continue; }
     for (const entry of entries) {
+      const nameLower = entry.name.toLowerCase();
+      if (entry.isDirectory() && SKIP_DIRS.has(nameLower)) continue;
+      if (nameLower.endsWith(".asar")) continue;
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
         stack.push(full);
