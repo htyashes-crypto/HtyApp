@@ -386,7 +386,7 @@ textarea {
   justify-content: space-between;
   gap: 24px;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   background:
     linear-gradient(135deg, rgba(0, 194, 168, 0.08) 0%, rgba(53, 184, 255, 0.06) 50%, rgba(9, 14, 22, 0.36) 100%);
   border-color: rgba(0, 194, 168, 0.15);
