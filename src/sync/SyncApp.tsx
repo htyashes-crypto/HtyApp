@@ -1,18 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FolderOpen } from "lucide-react";
 import { syncApi } from "./lib/sync-api";
 import { useSyncUiStore } from "./state/sync-ui-store";
-import { SyncProjectList } from "./components/SyncProjectList";
+import { SyncRepoTree } from "./components/SyncRepoTree";
 import { SyncProjectPage } from "./pages/SyncProjectPage";
-import { getDesktopBridge } from "../lib/desktop";
 
 export function SyncApp() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const selectedRepoId = useSyncUiStore((s) => s.selectedRepoId);
+  const setSelectedRepoId = useSyncUiStore((s) => s.setSelectedRepoId);
   const selectedProjectName = useSyncUiStore((s) => s.selectedProjectName);
   const setSelectedProjectName = useSyncUiStore((s) => s.setSelectedProjectName);
+
+  // Expanded repos (independent from selection)
+  const [expandedRepoIds, setExpandedRepoIds] = useState<Set<string>>(
+    () => new Set(selectedRepoId ? [selectedRepoId] : [])
+  );
 
   const projectsQuery = useQuery({
     queryKey: ["sync-projects"],
@@ -20,74 +25,126 @@ export function SyncApp() {
   });
 
   const data = projectsQuery.data;
-  const projects = data?.Projects ?? [];
-  const repoPath = data?.RepositoryPath ?? "";
+  const repositories = data?.Repositories ?? [];
 
-  // Auto-select first project if none selected
+  // Auto-select repo and project
   useEffect(() => {
-    if (!projects.length) {
+    if (!repositories.length) {
+      if (selectedRepoId) setSelectedRepoId(null);
       if (selectedProjectName) setSelectedProjectName(null);
       return;
     }
-    if (!selectedProjectName || !projects.some((p) => p.Name === selectedProjectName)) {
-      setSelectedProjectName(projects[0].Name);
+    // If no repo selected or selected repo doesn't exist, select first
+    const currentRepo = repositories.find((r) => r.Id === selectedRepoId);
+    if (!currentRepo) {
+      const firstRepo = repositories[0];
+      setSelectedRepoId(firstRepo.Id);
+      setExpandedRepoIds((prev) => new Set(prev).add(firstRepo.Id));
+      const firstProjects = firstRepo.Projects;
+      setSelectedProjectName(firstProjects.length ? firstProjects[0].Name : null);
+      return;
     }
-  }, [projects, selectedProjectName, setSelectedProjectName]);
+    // If selected project doesn't exist in current repo, select first
+    if (!selectedProjectName || !currentRepo.Projects.some((p) => p.Name === selectedProjectName)) {
+      setSelectedProjectName(currentRepo.Projects.length ? currentRepo.Projects[0].Name : null);
+    }
+  }, [repositories, selectedRepoId, selectedProjectName, setSelectedRepoId, setSelectedProjectName]);
 
-  const selectedProject = projects.find((p) => p.Name === selectedProjectName) ?? null;
+  const selectedRepo = repositories.find((r) => r.Id === selectedRepoId) ?? null;
+  const selectedProject = selectedRepo?.Projects.find((p) => p.Name === selectedProjectName) ?? null;
+  const repoPath = selectedRepo?.RepositoryPath ?? "";
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["sync-projects"] });
 
+  // Repository mutations
+  const addRepository = useMutation({
+    mutationFn: ({ name, repoPath }: { name: string; repoPath: string }) => syncApi.addRepository(name, repoPath),
+    onSuccess: async (result) => {
+      await invalidate();
+      // Auto-select and expand the newly added repo
+      if (result?.id) {
+        setSelectedRepoId(result.id);
+        setExpandedRepoIds((prev) => new Set(prev).add(result.id));
+        setSelectedProjectName(null);
+      }
+    }
+  });
+  const removeRepository = useMutation({
+    mutationFn: (repoId: string) => syncApi.removeRepository(repoId),
+    onSuccess: () => {
+      invalidate();
+    }
+  });
+  const renameRepository = useMutation({
+    mutationFn: ({ repoId, newName }: { repoId: string; newName: string }) => syncApi.renameRepository(repoId, newName),
+    onSuccess: invalidate
+  });
+  const setRepositoryPath = useMutation({
+    mutationFn: ({ repoId, repoPath }: { repoId: string; repoPath: string }) => syncApi.setRepositoryPath(repoId, repoPath),
+    onSuccess: invalidate
+  });
+
+  // Project mutations (scoped to repo)
   const addProject = useMutation({
-    mutationFn: ({ name, path }: { name: string; path: string }) => syncApi.addProject(name, path),
+    mutationFn: ({ repoId, name, path }: { repoId: string; name: string; path: string }) => syncApi.addProject(repoId, name, path),
     onSuccess: invalidate
   });
-
   const removeProject = useMutation({
-    mutationFn: (name: string) => syncApi.removeProject(name),
+    mutationFn: ({ repoId, name }: { repoId: string; name: string }) => syncApi.removeProject(repoId, name),
     onSuccess: invalidate
   });
-
   const renameProject = useMutation({
-    mutationFn: ({ oldName, newName }: { oldName: string; newName: string }) => syncApi.renameProject(oldName, newName),
+    mutationFn: ({ repoId, oldName, newName }: { repoId: string; oldName: string; newName: string }) => syncApi.renameProject(repoId, oldName, newName),
     onSuccess: invalidate
   });
 
-  const saveRepoPath = useMutation({
-    mutationFn: async (newPath: string) => {
-      const current = projectsQuery.data || { RepositoryPath: "", Projects: [] };
-      await syncApi.saveProjects({ ...current, RepositoryPath: newPath });
-    },
-    onSuccess: invalidate
-  });
+  const toggleExpandRepo = useCallback((repoId: string) => {
+    setExpandedRepoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(repoId)) {
+        next.delete(repoId);
+      } else {
+        next.add(repoId);
+      }
+      return next;
+    });
+  }, []);
 
-  const handleSelectRepo = async () => {
-    const bridge = getDesktopBridge();
-    if (!bridge) return;
-    const result = await bridge.openDialog({ directory: true, title: t("sync.selectRepoFolder") });
-    if (!result || Array.isArray(result)) return;
-    saveRepoPath.mutate(result);
-  };
+  const handleSelectRepo = useCallback((repoId: string) => {
+    toggleExpandRepo(repoId);
+    // Select the repo and its first project
+    if (repoId !== selectedRepoId) {
+      setSelectedRepoId(repoId);
+      const repo = repositories.find((r) => r.Id === repoId);
+      if (repo && repo.Projects.length) {
+        setSelectedProjectName(repo.Projects[0].Name);
+      } else {
+        setSelectedProjectName(null);
+      }
+    }
+  }, [toggleExpandRepo, selectedRepoId, setSelectedRepoId, setSelectedProjectName, repositories]);
+
+  const handleSelectProject = useCallback((_repoId: string, projectName: string) => {
+    setSelectedProjectName(projectName);
+  }, [setSelectedProjectName]);
 
   return (
     <div className="sync-app">
       <div className="sync-sidebar">
-        <div className="sync-sidebar__repo">
-          <span className="sync-sidebar__repo-label">{t("sync.repository")}</span>
-          <div className="sync-sidebar__repo-row">
-            <span className="sync-sidebar__repo-path" title={repoPath}>{repoPath || t("sync.notSet")}</span>
-            <button className="button button--ghost" onClick={handleSelectRepo}>
-              <FolderOpen size={14} />
-            </button>
-          </div>
-        </div>
-        <SyncProjectList
-          projects={projects.map((p) => ({ name: p.Name, path: p.Path }))}
-          selectedName={selectedProjectName}
-          onSelect={setSelectedProjectName}
-          onAdd={(name, path) => addProject.mutate({ name, path })}
-          onRemove={(name) => removeProject.mutate(name)}
-          onRename={(oldName, newName) => renameProject.mutate({ oldName, newName })}
+        <SyncRepoTree
+          repositories={repositories}
+          expandedRepoIds={expandedRepoIds}
+          selectedRepoId={selectedRepoId}
+          selectedProjectName={selectedProjectName}
+          onSelectRepo={handleSelectRepo}
+          onSelectProject={handleSelectProject}
+          onAddRepo={(name, path) => addRepository.mutate({ name, repoPath: path })}
+          onRemoveRepo={(repoId) => removeRepository.mutate(repoId)}
+          onRenameRepo={(repoId, newName) => renameRepository.mutate({ repoId, newName })}
+          onChangeRepoPath={(repoId, newPath) => setRepositoryPath.mutate({ repoId, repoPath: newPath })}
+          onAddProject={(repoId, name, path) => addProject.mutate({ repoId, name, path })}
+          onRemoveProject={(repoId, name) => removeProject.mutate({ repoId, name })}
+          onRenameProject={(repoId, oldName, newName) => renameProject.mutate({ repoId, oldName, newName })}
           onOpenFolder={(path) => syncApi.openInExplorer(path)}
         />
       </div>
@@ -99,9 +156,11 @@ export function SyncApp() {
           />
         ) : (
           <div className="sync-main__empty">
-            {!repoPath
-              ? t("sync.noRepository")
-              : t("sync.noProjectSelected")}
+            {!repositories.length
+              ? t("sync.noRepositories")
+              : !repoPath
+                ? t("sync.noRepository")
+                : t("sync.noProjectSelected")}
           </div>
         )}
       </div>

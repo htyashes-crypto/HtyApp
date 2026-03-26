@@ -1,5 +1,6 @@
 const path = require("node:path");
 const fs = require("node:fs");
+const crypto = require("node:crypto");
 const { Worker } = require("node:worker_threads");
 const { shell } = require("electron");
 const { ProjectStorage } = require("./sync-utils/project-storage.cjs");
@@ -29,31 +30,75 @@ class SyncService {
 
   async invoke(command, args) {
     switch (command) {
-      // Project management
+      // Project & Repository management
       case "sync_load_projects":
         return this.projectStorage.load();
       case "sync_save_projects":
         this.projectStorage.save(args.data);
         return;
+
+      // Repository CRUD
+      case "sync_add_repository": {
+        const data = this.projectStorage.load();
+        const id = crypto.randomUUID();
+        data.Repositories.push({
+          Id: id,
+          Name: args.name,
+          RepositoryPath: args.repoPath || "",
+          Projects: []
+        });
+        this.projectStorage.save(data);
+        return { id };
+      }
+      case "sync_remove_repository": {
+        const data = this.projectStorage.load();
+        data.Repositories = data.Repositories.filter((r) => r.Id !== args.repoId);
+        this.projectStorage.save(data);
+        return;
+      }
+      case "sync_rename_repository": {
+        const data = this.projectStorage.load();
+        const repo = data.Repositories.find((r) => r.Id === args.repoId);
+        if (!repo) throw new Error(`Repository not found`);
+        repo.Name = args.newName;
+        this.projectStorage.save(data);
+        return;
+      }
+      case "sync_set_repository_path": {
+        const data = this.projectStorage.load();
+        const repo = data.Repositories.find((r) => r.Id === args.repoId);
+        if (!repo) throw new Error(`Repository not found`);
+        repo.RepositoryPath = args.repoPath;
+        this.projectStorage.save(data);
+        return;
+      }
+
+      // Project CRUD (scoped to repository)
       case "sync_add_project": {
         const data = this.projectStorage.load();
-        if (data.Projects.some((p) => p.Name === args.name))
+        const repo = data.Repositories.find((r) => r.Id === args.repoId);
+        if (!repo) throw new Error(`Repository not found`);
+        if (repo.Projects.some((p) => p.Name === args.name))
           throw new Error(`Project "${args.name}" already exists`);
-        data.Projects.push({ Name: args.name, Path: args.path });
+        repo.Projects.push({ Name: args.name, Path: args.path });
         this.projectStorage.save(data);
         return;
       }
       case "sync_remove_project": {
         const data = this.projectStorage.load();
-        data.Projects = data.Projects.filter((p) => p.Name !== args.name);
+        const repo = data.Repositories.find((r) => r.Id === args.repoId);
+        if (!repo) throw new Error(`Repository not found`);
+        repo.Projects = repo.Projects.filter((p) => p.Name !== args.name);
         this.projectStorage.save(data);
         return;
       }
       case "sync_rename_project": {
         const data = this.projectStorage.load();
-        const proj = data.Projects.find((p) => p.Name === args.oldName);
+        const repo = data.Repositories.find((r) => r.Id === args.repoId);
+        if (!repo) throw new Error(`Repository not found`);
+        const proj = repo.Projects.find((p) => p.Name === args.oldName);
         if (!proj) throw new Error(`Project "${args.oldName}" not found`);
-        if (data.Projects.some((p) => p.Name === args.newName))
+        if (repo.Projects.some((p) => p.Name === args.newName))
           throw new Error(`Project "${args.newName}" already exists`);
         proj.Name = args.newName;
         this.projectStorage.save(data);

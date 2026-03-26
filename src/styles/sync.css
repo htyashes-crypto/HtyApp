@@ -43,34 +43,218 @@
   font-size: 14px;
 }
 
-/* ====================== Sidebar: Repo Section ====================== */
+/* ====================== Repo Tree ====================== */
 
-.sync-sidebar__repo {
+.sync-repo-tree {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.sync-sidebar__repo-label {
+.sync-repo-tree__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sync-repo-tree__title {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-muted);
 }
 
-.sync-sidebar__repo-row {
+.sync-repo-tree__add-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+
+.sync-repo-tree__add-btn:hover {
+  background: rgba(126, 153, 182, 0.08);
+  color: var(--text);
+}
+
+.sync-repo-tree__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.sync-repo-tree__empty {
+  color: var(--text-soft);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ---- Repo Group ---- */
+
+.sync-repo-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sync-repo-group.is-expanded {
+  border-color: rgba(53, 184, 255, 0.2);
+}
+
+.sync-repo-group__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.sync-repo-group__header:hover {
+  background: rgba(126, 153, 182, 0.08);
+}
+
+.sync-repo-group__chevron {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.sync-repo-group__icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.sync-repo-group__name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-repo-group__rename {
+  flex: 1;
+  padding: 3px 8px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+}
+
+.sync-repo-group__actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.sync-repo-group__header:hover .sync-repo-group__actions {
+  opacity: 1;
+}
+
+.sync-repo-group__actions button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.sync-repo-group__actions button:hover {
+  background: rgba(126, 153, 182, 0.12);
+  color: var(--text);
+}
+
+.sync-repo-group__body {
+  padding: 0 10px 10px;
+}
+
+.sync-repo-group__path {
+  font-size: 11px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px 6px;
+}
+
+.sync-repo-group--adding {
+  border-color: rgba(0, 194, 168, 0.3);
+  padding: 8px 10px;
+}
+
+.sync-repo-group__add-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.sync-sidebar__repo-path {
-  flex: 1;
-  font-size: 12px;
-  color: var(--text-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.sync-repo-group__confirm-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sync-repo-group__confirm-btn:hover {
+  background: rgba(126, 153, 182, 0.12);
+  color: var(--text);
+}
+
+/* ---- Project inline add ---- */
+
+.sync-project-item--adding {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px dashed rgba(0, 194, 168, 0.3);
+}
+
+.sync-project-item__add-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.sync-project-item__confirm-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sync-project-item__confirm-btn:hover {
+  background: rgba(126, 153, 182, 0.12);
+  color: var(--text);
 }
 
 /* ====================== Project List ====================== */

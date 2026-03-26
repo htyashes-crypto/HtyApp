@@ -22,12 +22,20 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 }
 
 export const syncApi = {
-  // Projects
+  // Projects & Repositories
   loadProjects: () => call<SyncProjectData>("sync_load_projects"),
   saveProjects: (data: SyncProjectData) => call<void>("sync_save_projects", { data }),
-  addProject: (name: string, projectPath: string) => call<void>("sync_add_project", { name, path: projectPath }),
-  removeProject: (name: string) => call<void>("sync_remove_project", { name }),
-  renameProject: (oldName: string, newName: string) => call<void>("sync_rename_project", { oldName, newName }),
+
+  // Repository management
+  addRepository: (name: string, repoPath: string) => call<{ id: string }>("sync_add_repository", { name, repoPath }),
+  removeRepository: (repoId: string) => call<void>("sync_remove_repository", { repoId }),
+  renameRepository: (repoId: string, newName: string) => call<void>("sync_rename_repository", { repoId, newName }),
+  setRepositoryPath: (repoId: string, repoPath: string) => call<void>("sync_set_repository_path", { repoId, repoPath }),
+
+  // Project management (scoped to repository)
+  addProject: (repoId: string, name: string, projectPath: string) => call<void>("sync_add_project", { repoId, name, path: projectPath }),
+  removeProject: (repoId: string, name: string) => call<void>("sync_remove_project", { repoId, name }),
+  renameProject: (repoId: string, oldName: string, newName: string) => call<void>("sync_rename_project", { repoId, oldName, newName }),
 
   // Diff / Sync
   computeDiffs: (request: ComputeDiffsRequest) => call<DiffEntry[]>("sync_compute_diffs", request as unknown as Record<string, unknown>),

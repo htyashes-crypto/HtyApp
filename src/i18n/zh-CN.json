@@ -267,7 +267,11 @@
     "fileNotExist": "文件不存在"
   },
   "sync": {
+    "repositories": "仓库",
     "repository": "仓库",
+    "addRepository": "添加仓库",
+    "repositoryName": "仓库名称：",
+    "noRepositories": "还没有仓库。点击 + 添加。",
     "notSet": "未设置",
     "projects": "项目",
     "noProjects": "还没有项目。点击 + 添加。",

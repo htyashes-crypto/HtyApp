@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type { SyncPanel, SyncMode } from "../lib/sync-types";
 
 interface SyncUiState {
+  selectedRepoId: string | null;
   selectedProjectName: string | null;
   syncPanel: SyncPanel;
   syncMode: SyncMode;
@@ -11,6 +12,7 @@ interface SyncUiState {
   scanProgress: { done: number; total: number };
   isBulkSyncing: boolean;
 
+  setSelectedRepoId: (id: string | null) => void;
   setSelectedProjectName: (name: string | null) => void;
   setSyncPanel: (panel: SyncPanel) => void;
   setSyncMode: (mode: SyncMode) => void;
@@ -23,6 +25,7 @@ interface SyncUiState {
 export const useSyncUiStore = create<SyncUiState>()(
   persist(
     (set) => ({
+      selectedRepoId: null,
       selectedProjectName: null,
       syncPanel: "timeline",
       syncMode: "All",
@@ -31,6 +34,7 @@ export const useSyncUiStore = create<SyncUiState>()(
       scanProgress: { done: 0, total: 0 },
       isBulkSyncing: false,
 
+      setSelectedRepoId: (selectedRepoId) => set({ selectedRepoId }),
       setSelectedProjectName: (selectedProjectName) => set({ selectedProjectName }),
       setSyncPanel: (syncPanel) => set({ syncPanel }),
       setSyncMode: (syncMode) => set({ syncMode }),
@@ -43,6 +47,7 @@ export const useSyncUiStore = create<SyncUiState>()(
       name: "hty-sync-ui",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        selectedRepoId: state.selectedRepoId,
         selectedProjectName: state.selectedProjectName,
         syncPanel: state.syncPanel,
         syncMode: state.syncMode

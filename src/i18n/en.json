@@ -267,7 +267,11 @@
     "fileNotExist": "File does not exist"
   },
   "sync": {
+    "repositories": "Repositories",
     "repository": "Repository",
+    "addRepository": "Add Repository",
+    "repositoryName": "Repository name:",
+    "noRepositories": "No repositories yet. Click + to add.",
     "notSet": "Not set",
     "projects": "Projects",
     "noProjects": "No projects yet. Click + to add.",

@@ -23,9 +23,16 @@ export interface SyncProjectItem {
   Path: string;
 }
 
-export interface SyncProjectData {
+export interface SyncRepository {
+  Id: string;
+  Name: string;
   RepositoryPath: string;
   Projects: SyncProjectItem[];
+}
+
+export interface SyncProjectData {
+  Version: number;
+  Repositories: SyncRepository[];
 }
 
 // Diff engine output (camelCase from our Node.js backend)
