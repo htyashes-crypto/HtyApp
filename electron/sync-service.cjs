@@ -265,6 +265,11 @@ class SyncService {
         this.stopAutoSync(args.projectPath);
         return;
 
+      // Scan control
+      case "sync_cancel_scan":
+        this._cancelDiffWorker();
+        return;
+
       // Utilities
       case "sync_open_in_explorer":
         shell.openPath(args.path);
@@ -297,12 +302,16 @@ class SyncService {
     }
   }
 
-  _computeDiffsInWorker(request, filterOptions) {
-    // 终止之前正在运行的扫描 Worker，避免多个扫描竞争进度事件
+  _cancelDiffWorker() {
     if (this._diffWorker) {
       this._diffWorker.terminate();
       this._diffWorker = null;
     }
+  }
+
+  _computeDiffsInWorker(request, filterOptions) {
+    // 终止之前正在运行的扫描 Worker，避免多个扫描竞争进度事件
+    this._cancelDiffWorker();
 
     return new Promise((resolve, reject) => {
       const workerPath = path.join(__dirname, "sync-utils", "diff-worker.cjs");

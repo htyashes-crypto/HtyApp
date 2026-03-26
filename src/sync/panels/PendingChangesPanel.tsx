@@ -384,6 +384,21 @@ export function PendingChangesPanel({ project, repoPath }: Props) {
 
   useSyncEvent("hty:sync:bulk-progress", handleBulkProgress);
 
+  // Cancel running scan when project/repo changes or component unmounts
+  const prevKeyRef = useRef(`${project.path}|${repoPath}`);
+  useEffect(() => {
+    const key = `${project.path}|${repoPath}`;
+    if (prevKeyRef.current !== key) {
+      prevKeyRef.current = key;
+      syncApi.cancelScan().catch(() => {});
+      setIsScanning(false);
+      setScanProgress({ done: 0, total: 0 });
+    }
+    return () => {
+      syncApi.cancelScan().catch(() => {});
+    };
+  }, [project.path, repoPath, setIsScanning, setScanProgress]);
+
   const diffsQuery = useQuery({
     queryKey: ["sync-diffs", project.path, repoPath, syncMode],
     queryFn: async () => {

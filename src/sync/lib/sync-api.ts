@@ -64,6 +64,9 @@ export const syncApi = {
   loadFilterSchemes: () => call<FilterScheme[]>("sync_load_filter_schemes"),
   saveFilterSchemes: (schemes: FilterScheme[]) => call<void>("sync_save_filter_schemes", { schemes }),
 
+  // Scan control
+  cancelScan: () => call<void>("sync_cancel_scan"),
+
   // Auto-sync
   startAutoSync: (request: AutoSyncRequest) => call<void>("sync_start_auto_sync", request as unknown as Record<string, unknown>),
   stopAutoSync: (projectPath: string) => call<void>("sync_stop_auto_sync", { projectPath }),
