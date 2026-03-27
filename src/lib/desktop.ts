@@ -34,6 +34,7 @@ export interface DesktopBridge {
   saveDialog(options: DesktopSaveDialogOptions): Promise<string | null>;
   onSyncEvent(channel: string, callback: (data: unknown) => void): unknown;
   removeSyncEvent(channel: string, listener: unknown): void;
+  getAppVersion(): Promise<string>;
   checkForUpdate(): Promise<unknown>;
   downloadUpdate(): Promise<void>;
   quitAndInstall(): Promise<void>;

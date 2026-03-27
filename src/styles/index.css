@@ -4277,3 +4277,137 @@ body::before {
 :root[data-theme="light"] .user-profile-menu {
   background: var(--bg-elevated);
 }
+
+/* ── Update Dialog ── */
+
+.update-dialog {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.update-dialog__body {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.update-dialog__version-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.update-dialog__version-tag {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.update-dialog__version-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.update-dialog__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.update-dialog__status--ready {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.update-dialog__status--error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  justify-content: space-between;
+}
+
+.update-dialog__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.update-dialog__progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.update-dialog__progress-track {
+  height: 6px;
+  background: rgba(126, 153, 182, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.update-dialog__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00c2a8, #35b8ff);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.update-dialog__changelog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.update-dialog__changelog h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.update-dialog__changelog-section {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.update-dialog__changelog-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.update-dialog__changelog-version {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.update-dialog__changelog-date {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.update-dialog__changelog-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.update-dialog__changelog-list li {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.update-dialog__footer-left,
+.update-dialog__footer-right {
+  display: flex;
+  gap: 8px;
+}

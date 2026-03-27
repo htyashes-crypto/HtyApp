@@ -514,5 +514,19 @@
     "inputImportPackage": "Enter .htyskillpkg path to import",
     "exportPackage": "Export Hty Skill Package",
     "inputExportPath": "Enter export package path"
+  },
+  "update": {
+    "title": "Update Available",
+    "currentVersion": "Current version",
+    "readyToInstall": "v{version} is ready. Restart to apply.",
+    "downloading": "Downloading update…",
+    "changelog": "What's New",
+    "download": "Download Update",
+    "installNow": "Restart Now",
+    "later": "Later",
+    "close": "Close",
+    "copy": "Copy",
+    "errorLabel": "Update error",
+    "errorGeneric": "Update failed"
   }
 }

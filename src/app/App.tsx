@@ -15,7 +15,7 @@ import { api } from "../lib/api";
 import type { MergeSessionSummary } from "../lib/merge-types";
 import { pickExportPackagePath, pickImportPackagePath, pickWorkspaceRoot } from "../lib/dialogs";
 import type { LocalInstance } from "../lib/types";
-import { UpdateNotification } from "../components/UpdateNotification";
+import { UpdateDialog } from "../components/UpdateDialog";
 import { useUiStore } from "../state/ui-store";
 import { OverviewPage } from "../pages/OverviewPage";
 import { GlobalLibraryPage } from "../pages/GlobalLibraryPage";
@@ -36,7 +36,7 @@ export function App() {
       </div>
       <UserProfileBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <UpdateNotification />
+      <UpdateDialog />
     </div>
   );
 }

@@ -70,6 +70,10 @@ function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("hty:get-app-version", () => {
+    return app.getVersion();
+  });
+
   ipcMain.handle("hty:dialog:open", async (_event, options) => {
     const targetWindow = BrowserWindow.getFocusedWindow() || mainWindow || undefined;
     const result = await dialog.showOpenDialog(targetWindow, {
