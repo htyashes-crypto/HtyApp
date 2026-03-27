@@ -69,9 +69,9 @@ export function TasksApp() {
     if (filter === "active") list = items.filter((i) => i.status !== "completed");
     else if (filter === "completed") list = items.filter((i) => i.status === "completed");
     return [...list].sort((a, b) => {
-      if ((a.status === "completed") !== (b.status === "completed"))
-        return a.status === "completed" ? 1 : -1;
-      if (a.status !== b.status) return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      const aCompleted = a.status === "completed" ? 1 : 0;
+      const bCompleted = b.status === "completed" ? 1 : 0;
+      if (aCompleted !== bCompleted) return aCompleted - bCompleted;
       return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
         || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
