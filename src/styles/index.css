@@ -4284,6 +4284,21 @@ body::before {
   width: min(560px, calc(100vw - 48px));
 }
 
+.update-dialog__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.update-dialog__close:hover {
+  color: var(--text);
+  background: rgba(126, 153, 182, 0.1);
+}
+
 .update-dialog__body {
   max-height: 420px;
   overflow-y: auto;

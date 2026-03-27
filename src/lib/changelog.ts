@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.3.8",
+    date: "2026-03-27",
+    changes: [
+      "修复更新对话框关闭按钮样式",
+      "修复更新日志不显示的问题"
+    ]
+  },
+  {
     version: "0.3.7",
     date: "2026-03-27",
     changes: [

@@ -67,7 +67,12 @@ export function UpdateDialog() {
 
   // Find changelog entries between current and new version
   const newEntries = version
-    ? changelog.filter((e) => compareVersions(e.version, currentVersion) > 0 && compareVersions(e.version, version) <= 0)
+    ? changelog.filter((e) => {
+        if (currentVersion) {
+          return compareVersions(e.version, currentVersion) > 0 && compareVersions(e.version, version) <= 0;
+        }
+        return compareVersions(e.version, version) <= 0;
+      })
     : [];
 
   return (
@@ -76,7 +81,7 @@ export function UpdateDialog() {
         {/* Header */}
         <div className="dialog__header">
           <h3>{t("update.title")}</h3>
-          <button type="button" className="icon-btn" onClick={handleDismiss}>
+          <button type="button" className="update-dialog__close" onClick={handleDismiss}>
             <X size={16} />
           </button>
         </div>
