@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useRef, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -119,6 +119,12 @@ export function TasksApp() {
     onSuccess: invalidateAll
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, fields }: { id: string; fields: Partial<Pick<TaskItem, "title" | "description" | "priority">> }) =>
+      tasksApi.update(id, fields),
+    onSuccess: invalidateAll
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => tasksApi.delete(id),
     onSuccess: invalidateAll
@@ -215,11 +221,17 @@ export function TasksApp() {
           {/* Inline add */}
           {adding && (
             <div className="tasks-add-row">
-              <select value={newPriority} onChange={(e) => setNewPriority(e.target.value as TaskPriority)} className="tasks-priority-select">
-                <option value="high">{t("tasks.high")}</option>
-                <option value="normal">{t("tasks.normal")}</option>
-                <option value="low">{t("tasks.low")}</option>
-              </select>
+              <div className="tasks-priority-picker">
+                {(["high", "normal", "low"] as TaskPriority[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`tasks-priority-picker__dot task-priority--${p} ${newPriority === p ? "is-active" : ""}`}
+                    title={t(`tasks.${p}`)}
+                    onClick={() => setNewPriority(p)}
+                  />
+                ))}
+              </div>
               <input
                 autoFocus
                 className="tasks-add-input"
@@ -255,6 +267,7 @@ export function TasksApp() {
                   onRollback={() => rollbackMutation.mutate(task.id)}
                   onRework={() => reworkMutation.mutate(task.id)}
                   onDelete={() => deleteMutation.mutate(task.id)}
+                  onUpdate={(fields) => updateMutation.mutate({ id: task.id, fields })}
                 />
               ))
             )}
@@ -270,27 +283,89 @@ function TaskRow({
   onAdvance,
   onRollback,
   onRework,
-  onDelete
+  onDelete,
+  onUpdate
 }: {
   task: TaskItem;
   onAdvance: () => void;
   onRollback: () => void;
   onRework: () => void;
   onDelete: () => void;
+  onUpdate: (fields: Partial<Pick<TaskItem, "title" | "description" | "priority">>) => void;
 }) {
   const { t } = useTranslation();
   const isCompleted = task.status === "completed";
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDesc, setEditDesc] = useState(task.description);
+  const editRef = useRef<HTMLDivElement>(null);
+
+  function handleSave() {
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle) return;
+    const changes: Partial<Pick<TaskItem, "title" | "description">> = {};
+    if (trimmedTitle !== task.title) changes.title = trimmedTitle;
+    if (editDesc.trim() !== task.description) changes.description = editDesc.trim();
+    if (Object.keys(changes).length > 0) onUpdate(changes);
+    setEditing(false);
+  }
+
+  function handleBlur(e: React.FocusEvent) {
+    if (editRef.current?.contains(e.relatedTarget as Node)) return;
+    handleSave();
+  }
+
+  function handleCancel() {
+    setEditTitle(task.title);
+    setEditDesc(task.description);
+    setEditing(false);
+  }
 
   return (
     <div className={`task-row ${isCompleted ? "task-row--completed" : ""}`}>
-      <span className={`task-priority task-priority--${task.priority}`} />
+      <button
+        type="button"
+        className={`task-priority task-priority--${task.priority}`}
+        title={t(`tasks.${task.priority}`)}
+        onClick={() => {
+          const next: Record<TaskPriority, TaskPriority> = { low: "normal", normal: "high", high: "low" };
+          onUpdate({ priority: next[task.priority] });
+        }}
+      />
       <span className={`task-status-badge task-status-badge--${task.status}`}>
         {t(`tasks.status_${task.status}`)}
       </span>
-      <div className="task-content">
-        <span className={`task-title ${isCompleted ? "task-title--completed" : ""}`}>{task.title}</span>
-        {task.description && <span className="task-desc">{task.description}</span>}
-      </div>
+      {editing ? (
+        <div className="task-content task-content--editing" ref={editRef}>
+          <input
+            autoFocus
+            className="task-edit-input"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+              if (e.key === "Escape") handleCancel();
+            }}
+            onBlur={handleBlur}
+          />
+          <input
+            className="task-edit-input task-edit-input--desc"
+            value={editDesc}
+            onChange={(e) => setEditDesc(e.target.value)}
+            placeholder={t("tasks.descPlaceholder")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSave();
+              if (e.key === "Escape") handleCancel();
+            }}
+            onBlur={handleBlur}
+          />
+        </div>
+      ) : (
+        <div className="task-content" onDoubleClick={() => setEditing(true)}>
+          <span className={`task-title ${isCompleted ? "task-title--completed" : ""}`}>{task.title}</span>
+          {task.description && <span className="task-desc">{task.description}</span>}
+        </div>
+      )}
       <span className="task-time">{formatRelativeTime(task.createdAt)}</span>
       <div className="task-actions">
         {canRollback(task) && (

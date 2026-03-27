@@ -215,6 +215,7 @@
     "status_testing": "Testing",
     "status_completed": "Completed",
     "status_rework": "Rework",
+    "descPlaceholder": "Add description…",
     "advance": "Advance",
     "rollback": "Rollback",
     "rework": "Rework"

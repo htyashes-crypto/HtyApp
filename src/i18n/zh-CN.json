@@ -215,6 +215,7 @@
     "status_testing": "待测试",
     "status_completed": "已完成",
     "status_rework": "返工中",
+    "descPlaceholder": "添加描述…",
     "advance": "推进",
     "rollback": "回退",
     "rework": "返工"
