@@ -6,6 +6,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.3.7",
+    date: "2026-03-27",
+    changes: [
+      "移除侧边栏顶部 HtyApp 标题区域，界面更简洁"
+    ]
+  },
+  {
     version: "0.3.6",
     date: "2026-03-27",
     changes: [

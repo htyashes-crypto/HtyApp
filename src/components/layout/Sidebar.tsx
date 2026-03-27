@@ -46,16 +46,6 @@ export function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="brand brand--row">
-        <div className="brand__identity">
-          <div className="brand__mark">H</div>
-          <div>
-            <h1>{t("sidebar.brand")}</h1>
-            <p>{t("sidebar.brandDesc")}</p>
-          </div>
-        </div>
-      </div>
-
       {route === "projects" ? (
         <label className="sidebar__search">
           <Search size={15} />
