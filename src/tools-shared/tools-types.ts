@@ -1,5 +1,11 @@
-export type TaskStatus = "todo" | "done";
+export type TaskStatus = "not_started" | "in_progress" | "testing" | "completed" | "rework";
 export type TaskPriority = "low" | "normal" | "high";
+
+export interface TaskGroup {
+  id: string;
+  name: string;
+  createdAt: string;
+}
 
 export interface TaskItem {
   id: string;
@@ -7,6 +13,8 @@ export interface TaskItem {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
+  groupId: string;
+  hasReworked: boolean;
   createdAt: string;
   completedAt: string | null;
 }

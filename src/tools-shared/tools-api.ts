@@ -1,5 +1,5 @@
 import { getDesktopBridge, isDesktopRuntime } from "../lib/desktop";
-import type { TaskItem, TaskPriority, BookmarkGroup, BookmarkEntry } from "./tools-types";
+import type { TaskItem, TaskGroup, TaskPriority, BookmarkGroup, BookmarkEntry } from "./tools-types";
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const bridge = getDesktopBridge();
@@ -8,20 +8,47 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 }
 
 export const tasksApi = {
-  async list(): Promise<TaskItem[]> {
-    return isDesktopRuntime() ? call<TaskItem[]>("tasks_list") : [];
+  // Group management
+  async listGroups(): Promise<TaskGroup[]> {
+    return isDesktopRuntime() ? call<TaskGroup[]>("tasks_list_groups") : [];
   },
-  async create(title: string, description?: string, priority?: TaskPriority): Promise<TaskItem> {
-    return call<TaskItem>("tasks_create", { title, description, priority });
+  async createGroup(name: string): Promise<TaskGroup> {
+    return call<TaskGroup>("tasks_create_group", { name });
   },
-  async update(id: string, fields: Partial<Pick<TaskItem, "title" | "description" | "status" | "priority">>): Promise<TaskItem> {
+  async renameGroup(groupId: string, name: string): Promise<TaskGroup> {
+    return call<TaskGroup>("tasks_rename_group", { groupId, name });
+  },
+  async deleteGroup(groupId: string): Promise<void> {
+    await call<void>("tasks_delete_group", { groupId });
+  },
+
+  // Tasks
+  async list(groupId?: string): Promise<TaskItem[]> {
+    return isDesktopRuntime() ? call<TaskItem[]>("tasks_list", groupId ? { groupId } : {}) : [];
+  },
+  async create(title: string, description: string, priority: TaskPriority, groupId: string): Promise<TaskItem> {
+    return call<TaskItem>("tasks_create", { title, description, priority, groupId });
+  },
+  async update(id: string, fields: Partial<Pick<TaskItem, "title" | "description" | "priority">>): Promise<TaskItem> {
     return call<TaskItem>("tasks_update", { id, ...fields });
   },
   async delete(id: string): Promise<void> {
     await call<void>("tasks_delete", { id });
   },
-  async clearDone(): Promise<number> {
-    return call<number>("tasks_clear_done");
+
+  // Progress control
+  async advance(id: string): Promise<TaskItem> {
+    return call<TaskItem>("tasks_advance", { id });
+  },
+  async rollback(id: string): Promise<TaskItem> {
+    return call<TaskItem>("tasks_rollback", { id });
+  },
+  async rework(id: string): Promise<TaskItem> {
+    return call<TaskItem>("tasks_rework", { id });
+  },
+
+  async clearCompleted(): Promise<number> {
+    return call<number>("tasks_clear_completed");
   }
 };
 
