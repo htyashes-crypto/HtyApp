@@ -6,6 +6,27 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.4.1",
+    date: "2026-03-28",
+    changes: [
+      "修复更新日志不显示 v0.4.0 新功能的问题",
+      "新增 UI 样式统一：按钮、面板、对话框风格柔和化"
+    ]
+  },
+  {
+    version: "0.4.0",
+    date: "2026-03-28",
+    changes: [
+      "新增 library.json 内存缓存层，大幅提升 Dashboard 加载速度",
+      "新增 Toast 通知系统，所有操作均有即时反馈",
+      "新增自定义确认对话框，替代原生 window.confirm",
+      "Dashboard 新增可更新实例检测面板，支持一键全部更新",
+      "项目页新增批量操作：多选实例 + 批量更新",
+      "新增命令面板 (Ctrl+K)，快速搜索技能、工作区、命令",
+      "Activity 日志增强：按类型过滤 + 关键词搜索"
+    ]
+  },
+  {
     version: "0.3.8",
     date: "2026-03-27",
     changes: [
