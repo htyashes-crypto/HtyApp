@@ -198,7 +198,20 @@
     "skill": "Skill",
     "sync": "Sync",
     "tasks": "Tasks",
-    "marks": "Marks"
+    "marks": "Marks",
+    "memos": "Memos"
+  },
+  "memos": {
+    "title": "备忘录",
+    "add": "新建备忘录",
+    "empty": "还没有备忘录",
+    "untitled": "无标题",
+    "copyContent": "复制内容",
+    "copied": "已复制",
+    "deleteConfirm": "确认删除这条备忘录？",
+    "contentPlaceholder": "写点什么...",
+    "titlePlaceholder": "标题",
+    "filterAll": "全部"
   },
   "tasks": {
     "add": "添加任务",

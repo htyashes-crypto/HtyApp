@@ -34,3 +34,16 @@ export interface BookmarkGroup {
   entries: BookmarkEntry[];
   createdAt: string;
 }
+
+/* ── Memos ── */
+
+export type MemoPriority = "P0" | "P1" | "P2" | "P3" | "P4" | "P5";
+
+export interface MemoItem {
+  id: string;
+  title: string;
+  content: string;
+  priority: MemoPriority;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -198,7 +198,20 @@
     "skill": "Skill",
     "sync": "Sync",
     "tasks": "Tasks",
-    "marks": "Marks"
+    "marks": "Marks",
+    "memos": "Memos"
+  },
+  "memos": {
+    "title": "Memos",
+    "add": "New Memo",
+    "empty": "No memos yet",
+    "untitled": "Untitled",
+    "copyContent": "Copy Content",
+    "copied": "Copied",
+    "deleteConfirm": "Delete this memo?",
+    "contentPlaceholder": "Write something...",
+    "titlePlaceholder": "Title",
+    "filterAll": "All"
   },
   "tasks": {
     "add": "Add Task",

@@ -1,5 +1,5 @@
 import { getDesktopBridge, isDesktopRuntime } from "../lib/desktop";
-import type { TaskItem, TaskGroup, TaskPriority, BookmarkGroup, BookmarkEntry } from "./tools-types";
+import type { TaskItem, TaskGroup, TaskPriority, BookmarkGroup, BookmarkEntry, MemoItem, MemoPriority } from "./tools-types";
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const bridge = getDesktopBridge();
@@ -70,5 +70,20 @@ export const marksApi = {
   },
   async deleteEntry(workspaceId: string, groupId: string, entryId: string): Promise<void> {
     await call<void>("marks_delete_entry", { workspaceId, groupId, entryId });
+  }
+};
+
+export const memosApi = {
+  async list(): Promise<MemoItem[]> {
+    return isDesktopRuntime() ? call<MemoItem[]>("memos_list") : [];
+  },
+  async create(title: string, content: string, priority: MemoPriority): Promise<MemoItem> {
+    return call<MemoItem>("memos_create", { title, content, priority });
+  },
+  async update(id: string, fields: Partial<Pick<MemoItem, "title" | "content" | "priority">>): Promise<MemoItem> {
+    return call<MemoItem>("memos_update", { id, ...fields });
+  },
+  async delete(id: string): Promise<void> {
+    await call<void>("memos_delete", { id });
   }
 };

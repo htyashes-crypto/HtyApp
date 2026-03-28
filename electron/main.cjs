@@ -59,7 +59,7 @@ function registerIpcHandlers() {
       if (payload.command.startsWith("sync_")) {
         return await syncService.invoke(payload.command, payload.args || {});
       }
-      if (payload.command.startsWith("tasks_") || payload.command.startsWith("marks_")) {
+      if (payload.command.startsWith("tasks_") || payload.command.startsWith("marks_") || payload.command.startsWith("memos_")) {
         return await toolsService.invoke(payload.command, payload.args || {});
       }
 

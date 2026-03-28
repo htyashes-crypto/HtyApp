@@ -6,6 +6,18 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.5.0",
+    date: "2026-03-28",
+    changes: [
+      "新增备忘录 (Memos) 功能，支持卡片网格展示",
+      "备忘录支持 P0-P5 优先级标记，自动排序",
+      "备忘录点击卡片弹出编辑对话框，自动保存",
+      "备忘录支持一键复制全部内容",
+      "修复 Toast 通知在浅色主题下不可见的问题",
+      "修复备忘录编辑对话框未跟随主题色的问题"
+    ]
+  },
+  {
     version: "0.4.1",
     date: "2026-03-28",
     changes: [
