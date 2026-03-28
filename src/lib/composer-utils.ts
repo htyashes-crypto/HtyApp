@@ -47,6 +47,8 @@ export function renderMarkdown(md: string): string {
   const out: string[] = [];
   let inCode = false;
   let inList = false;
+  let codeBuffer: string[] = [];
+  let codeLang = "";
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -54,18 +56,19 @@ export function renderMarkdown(md: string): string {
     // Code block toggle
     if (line.startsWith("```")) {
       if (inCode) {
-        out.push("</code></pre>");
+        out.push(`<pre><code class="lang-${escapeHtml(codeLang)}">${codeBuffer.join("\n")}</code></pre>`);
+        codeBuffer = [];
         inCode = false;
       } else {
-        const lang = line.slice(3).trim();
-        out.push(`<pre><code class="lang-${escapeHtml(lang)}">`);
+        codeLang = line.slice(3).trim();
         inCode = true;
+        codeBuffer = [];
       }
       continue;
     }
 
     if (inCode) {
-      out.push(escapeHtml(line));
+      codeBuffer.push(escapeHtml(line));
       continue;
     }
 
@@ -107,7 +110,7 @@ export function renderMarkdown(md: string): string {
     out.push(`<p>${inlineFormat(line)}</p>`);
   }
 
-  if (inCode) out.push("</code></pre>");
+  if (inCode) out.push(`<pre><code class="lang-${escapeHtml(codeLang)}">${codeBuffer.join("\n")}</code></pre>`);
   if (inList) out.push("</ul>");
   return out.join("\n");
 }

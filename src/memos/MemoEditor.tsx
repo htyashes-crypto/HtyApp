@@ -23,6 +23,26 @@ const turndown = new TurndownService({
   bulletListMarker: "-"
 });
 
+// Override fenced code block to prevent accumulating empty lines
+turndown.addRule("fencedCodeBlock", {
+  filter: (node, options) => {
+    return (
+      options.codeBlockStyle === "fenced" &&
+      node.nodeName === "PRE" &&
+      node.firstChild != null &&
+      node.firstChild.nodeName === "CODE"
+    );
+  },
+  replacement: (_content, node) => {
+    const codeNode = node.firstChild as HTMLElement;
+    const className = codeNode.getAttribute("class") || "";
+    const langMatch = className.match(/(?:lang|language)-(\S+)/);
+    const language = langMatch ? langMatch[1] : "";
+    const code = (codeNode.textContent || "").replace(/^\n+/, "").replace(/\n+$/, "");
+    return "\n\n```" + language + "\n" + code + "\n```\n\n";
+  }
+});
+
 // Task list checkbox rule
 turndown.addRule("taskListItem", {
   filter: (node) => {
