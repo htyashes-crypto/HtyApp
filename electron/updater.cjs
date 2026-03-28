@@ -1,5 +1,5 @@
 const { autoUpdater } = require("electron-updater");
-const { ipcMain } = require("electron");
+const { ipcMain, net } = require("electron");
 
 let mainWindow = null;
 
@@ -24,6 +24,7 @@ function initAutoUpdater(win) {
       version: info.version,
       releaseNotes: info.releaseNotes
     });
+    fetchRemoteChangelog(info.version);
   });
 
   autoUpdater.on("update-not-available", () => {
@@ -81,6 +82,29 @@ function initAutoUpdater(win) {
       console.error("[UPDATER] initial check failed:", err);
     });
   }, 3000);
+}
+
+function fetchRemoteChangelog(version) {
+  const tag = `v${version}`;
+  const url = `https://raw.githubusercontent.com/htyashes-crypto/HtyApp/${tag}/changelog.json`;
+  const request = net.request(url);
+  let body = "";
+  request.on("response", (response) => {
+    if (response.statusCode !== 200) return;
+    response.on("data", (chunk) => { body += chunk.toString(); });
+    response.on("end", () => {
+      try {
+        const entries = JSON.parse(body);
+        sendUpdateStatus("changelog", { changelog: entries });
+      } catch {
+        // ignore parse errors
+      }
+    });
+  });
+  request.on("error", () => {
+    // silent fail — changelog is optional
+  });
+  request.end();
 }
 
 module.exports = { initAutoUpdater };

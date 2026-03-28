@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Loader2, RefreshCw, RotateCcw, X } from "lucide-react";
-import { getDesktopBridge, type UpdateStatusEvent } from "../lib/desktop";
-import { changelog, type ChangelogEntry } from "../lib/changelog";
+import { getDesktopBridge, type UpdateStatusEvent, type ChangelogEntry } from "../lib/desktop";
+import { changelog as localChangelog } from "../lib/changelog";
 
 type UpdatePhase = "idle" | "available" | "downloading" | "downloaded" | "error";
 
@@ -11,10 +11,10 @@ export function UpdateDialog() {
   const [phase, setPhase] = useState<UpdatePhase>("idle");
   const [version, setVersion] = useState("");
   const [currentVersion, setCurrentVersion] = useState("");
-  const [releaseNotes, setReleaseNotes] = useState("");
   const [percent, setPercent] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const [remoteChangelog, setRemoteChangelog] = useState<ChangelogEntry[] | null>(null);
 
   useEffect(() => {
     const bridge = getDesktopBridge();
@@ -27,8 +27,10 @@ export function UpdateDialog() {
         case "available":
           setPhase("available");
           setVersion(data.version ?? "");
-          setReleaseNotes(data.releaseNotes ?? "");
           setDismissed(false);
+          break;
+        case "changelog":
+          if (data.changelog) setRemoteChangelog(data.changelog);
           break;
         case "downloading":
           setPhase("downloading");
@@ -51,6 +53,19 @@ export function UpdateDialog() {
     return () => { bridge.removeUpdateStatus(listener); };
   }, [t]);
 
+  // Use remote changelog if available, otherwise fall back to local
+  const changelogSource = remoteChangelog ?? localChangelog;
+
+  const newEntries = useMemo(() => {
+    if (!version) return [];
+    return changelogSource.filter((e) => {
+      if (currentVersion) {
+        return compareVersions(e.version, currentVersion) > 0 && compareVersions(e.version, version) <= 0;
+      }
+      return compareVersions(e.version, version) <= 0;
+    });
+  }, [changelogSource, version, currentVersion]);
+
   if (phase === "idle" || dismissed) return null;
 
   const handleDownload = () => {
@@ -64,16 +79,6 @@ export function UpdateDialog() {
   };
 
   const handleDismiss = () => setDismissed(true);
-
-  // Find changelog entries between current and new version
-  const newEntries = version
-    ? changelog.filter((e) => {
-        if (currentVersion) {
-          return compareVersions(e.version, currentVersion) > 0 && compareVersions(e.version, version) <= 0;
-        }
-        return compareVersions(e.version, version) <= 0;
-      })
-    : [];
 
   return (
     <div className="dialog-backdrop" onClick={handleDismiss}>

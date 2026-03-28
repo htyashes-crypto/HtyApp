@@ -170,4 +170,34 @@ describe("UpdateDialog", () => {
     // Restore default mock
     mockBridge.getAppVersion.mockResolvedValue("0.3.8");
   });
+
+  it("should use remote changelog when received via 'changelog' event", async () => {
+    render(<UpdateDialog />);
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    // Simulate update-available
+    act(() => {
+      updateCallback!({ type: "available", version: "0.4.0" });
+    });
+
+    // Before remote changelog, uses local entries
+    expect(screen.queryByText("Remote feature A")).not.toBeInTheDocument();
+
+    // Simulate remote changelog arriving — replaces local source
+    act(() => {
+      updateCallback!({
+        type: "changelog",
+        changelog: [
+          { version: "0.4.0", date: "2099-01-01", changes: ["Remote feature A", "Remote feature B"] }
+        ]
+      });
+    });
+
+    // Remote entries should now show
+    expect(screen.getByText("Remote feature A")).toBeInTheDocument();
+    expect(screen.getByText("Remote feature B")).toBeInTheDocument();
+  });
 });

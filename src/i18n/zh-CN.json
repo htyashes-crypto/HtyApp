@@ -209,9 +209,12 @@
     "copyContent": "复制内容",
     "copied": "已复制",
     "deleteConfirm": "确认删除这条备忘录？",
+    "deleteGroupConfirm": "删除此分组？组内备忘录将移至第一个分组。",
     "contentPlaceholder": "写点什么...",
     "titlePlaceholder": "标题",
-    "filterAll": "全部"
+    "filterAll": "全部",
+    "manageGroups": "管理分组",
+    "newGroupPlaceholder": "新分组名称"
   },
   "tasks": {
     "add": "添加任务",
@@ -536,7 +539,7 @@
   "update": {
     "title": "发现新版本",
     "currentVersion": "当前版本",
-    "readyToInstall": "v{version} 已就绪，重启后生效。",
+    "readyToInstall": "v{{version}} 已就绪，重启后生效。",
     "downloading": "正在下载更新…",
     "changelog": "更新内容",
     "download": "下载更新",

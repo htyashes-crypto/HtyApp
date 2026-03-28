@@ -1,5 +1,5 @@
 import { getDesktopBridge, isDesktopRuntime } from "../lib/desktop";
-import type { TaskItem, TaskGroup, TaskPriority, BookmarkGroup, BookmarkEntry, MemoItem, MemoPriority } from "./tools-types";
+import type { TaskItem, TaskGroup, TaskPriority, BookmarkGroup, BookmarkEntry, MemoItem, MemoGroup } from "./tools-types";
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const bridge = getDesktopBridge();
@@ -74,13 +74,28 @@ export const marksApi = {
 };
 
 export const memosApi = {
+  // Groups
+  async listGroups(): Promise<MemoGroup[]> {
+    return isDesktopRuntime() ? call<MemoGroup[]>("memos_list_groups") : [];
+  },
+  async createGroup(name: string, color: string): Promise<MemoGroup> {
+    return call<MemoGroup>("memos_create_group", { name, color });
+  },
+  async renameGroup(groupId: string, name: string, color: string): Promise<MemoGroup> {
+    return call<MemoGroup>("memos_rename_group", { groupId, name, color });
+  },
+  async deleteGroup(groupId: string): Promise<void> {
+    await call<void>("memos_delete_group", { groupId });
+  },
+
+  // Items
   async list(): Promise<MemoItem[]> {
     return isDesktopRuntime() ? call<MemoItem[]>("memos_list") : [];
   },
-  async create(title: string, content: string, priority: MemoPriority): Promise<MemoItem> {
-    return call<MemoItem>("memos_create", { title, content, priority });
+  async create(title: string, content: string, groupId: string): Promise<MemoItem> {
+    return call<MemoItem>("memos_create", { title, content, groupId });
   },
-  async update(id: string, fields: Partial<Pick<MemoItem, "title" | "content" | "priority">>): Promise<MemoItem> {
+  async update(id: string, fields: Partial<Pick<MemoItem, "title" | "content" | "groupId">>): Promise<MemoItem> {
     return call<MemoItem>("memos_update", { id, ...fields });
   },
   async delete(id: string): Promise<void> {

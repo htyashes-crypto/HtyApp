@@ -58,6 +58,16 @@ class ToolsService {
       case "marks_delete_entry":
         return this.bookmark.deleteEntry(args);
 
+      // Memo Groups
+      case "memos_list_groups":
+        return this.memo.listGroups();
+      case "memos_create_group":
+        return this.memo.createGroup(args);
+      case "memos_rename_group":
+        return this.memo.renameGroup(args);
+      case "memos_delete_group":
+        return this.memo.deleteGroup(args);
+
       // Memos
       case "memos_list":
         return this.memo.list();

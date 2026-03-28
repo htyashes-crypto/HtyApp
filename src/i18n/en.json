@@ -209,9 +209,12 @@
     "copyContent": "Copy Content",
     "copied": "Copied",
     "deleteConfirm": "Delete this memo?",
+    "deleteGroupConfirm": "Delete this group? Memos will be moved to the first group.",
     "contentPlaceholder": "Write something...",
     "titlePlaceholder": "Title",
-    "filterAll": "All"
+    "filterAll": "All",
+    "manageGroups": "Manage Groups",
+    "newGroupPlaceholder": "New group name"
   },
   "tasks": {
     "add": "Add Task",
@@ -536,7 +539,7 @@
   "update": {
     "title": "Update Available",
     "currentVersion": "Current version",
-    "readyToInstall": "v{version} is ready. Restart to apply.",
+    "readyToInstall": "v{{version}} is ready. Restart to apply.",
     "downloading": "Downloading update…",
     "changelog": "What's New",
     "download": "Download Update",

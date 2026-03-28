@@ -5014,6 +5014,140 @@ body::before {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.memos-filter-tab__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.memos-filter-tab--manage {
+  padding: 4px 8px;
+  color: var(--text-muted);
+}
+
+/* ── Group Manager Dialog ── */
+.group-manager-dialog {
+  width: min(480px, calc(100vw - 48px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.group-manager__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.group-manager__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 8px);
+  transition: background 0.12s;
+  flex-wrap: wrap;
+}
+
+.group-manager__item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.group-manager__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.group-manager__name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.group-manager__action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.12s, background 0.12s;
+}
+
+.group-manager__action:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.group-manager__action--danger:hover {
+  color: var(--danger, #ff8f78);
+}
+
+.group-manager__colors {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.group-manager__color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+  padding: 0;
+}
+
+.group-manager__color-dot.is-active {
+  border-color: #fff;
+  transform: scale(1.15);
+}
+
+.group-manager__name-input {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+
+.group-manager__name-input:focus {
+  border-color: rgba(0, 194, 168, 0.4);
+}
+
+.group-manager__save-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.group-manager__add {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-manager__add-row {
+  display: flex;
+  gap: 8px;
+}
+
 .memos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -5038,7 +5172,7 @@ body::before {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.memo-card__priority {
+.memo-card__group {
   display: inline-block;
   width: fit-content;
   padding: 2px 8px;
@@ -5108,11 +5242,12 @@ body::before {
 .memo-edit-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(3, 7, 11, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(3, 7, 11, 0.5);
+  backdrop-filter: blur(6px);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 24px;
   z-index: 60;
 }
 
@@ -5120,37 +5255,26 @@ body::before {
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl, 20px);
-  width: min(600px, calc(100vw - 48px));
-  max-height: 80vh;
-  padding: 28px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   position: relative;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 
-.memo-edit-dialog__close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+.memo-edit-dialog__header {
   display: flex;
   align-items: center;
-  transition: color 0.12s, background 0.12s;
-}
-
-.memo-edit-dialog__close:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
+  gap: 12px;
 }
 
 .memo-edit-dialog__title {
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -5163,8 +5287,6 @@ body::before {
   font-weight: 700;
   color: var(--text);
   padding: 0 0 10px;
-  margin-right: 32px;
-  width: 100%;
   transition: border-color 0.15s;
 }
 
@@ -5177,12 +5299,31 @@ body::before {
   opacity: 0.4;
 }
 
-.memo-edit-dialog__priority {
+.memo-edit-dialog__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  transition: color 0.12s, background 0.12s;
 }
 
-.memo-edit-dialog__priority button {
+.memo-edit-dialog__close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.memo-edit-dialog__group-selector {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.memo-edit-dialog__group-selector button {
   padding: 4px 12px;
   border-radius: 6px;
   border: 1px solid;
@@ -5193,31 +5334,224 @@ body::before {
   background: transparent;
 }
 
-.memo-edit-dialog__priority button.is-active {
+.memo-edit-dialog__group-selector button.is-active {
   color: #fff !important;
 }
 
-.memo-edit-dialog__content {
+/* ── Memo Tiptap Editor ── */
+.memo-editor {
   flex: 1;
-  min-height: 240px;
-  background: var(--bg, rgba(9, 16, 25, 0.6));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md, 12px);
-  padding: 14px;
-  font-size: 14px;
-  color: var(--text);
-  line-height: 1.6;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.15s;
-  font-family: inherit;
+  overflow: hidden;
 }
 
-.memo-edit-dialog__content::placeholder {
+.memo-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  flex-wrap: wrap;
+}
+
+.memo-toolbar__group {
+  display: flex;
+  gap: 1px;
+}
+
+.memo-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 6px;
+}
+
+.memo-toolbar button {
+  background: none;
+  border: none;
   color: var(--text-muted);
-  opacity: 0.5;
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, background 0.1s;
 }
 
-.memo-edit-dialog__content:focus {
-  border-color: rgba(0, 194, 168, 0.3);
+.memo-toolbar button:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.memo-toolbar button.is-active {
+  color: var(--brand-a, #00c2a8);
+  background: rgba(0, 194, 168, 0.1);
+}
+
+.memo-toolbar button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.memo-editor__body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.memo-editor__body .tiptap {
+  padding: 16px 20px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  min-height: 100%;
+}
+
+.memo-editor__body .tiptap > *:first-child {
+  margin-top: 0;
+}
+
+/* Headings */
+.memo-editor__body .tiptap h1 { font-size: 24px; font-weight: 700; margin: 20px 0 8px; }
+.memo-editor__body .tiptap h2 { font-size: 20px; font-weight: 700; margin: 18px 0 6px; }
+.memo-editor__body .tiptap h3 { font-size: 17px; font-weight: 600; margin: 16px 0 4px; }
+.memo-editor__body .tiptap h4 { font-size: 15px; font-weight: 600; margin: 14px 0 4px; }
+
+/* Paragraph */
+.memo-editor__body .tiptap p { margin: 6px 0; }
+
+/* Bold, italic, code */
+.memo-editor__body .tiptap strong { font-weight: 700; }
+.memo-editor__body .tiptap em { font-style: italic; }
+.memo-editor__body .tiptap u { text-decoration: underline; }
+.memo-editor__body .tiptap s { text-decoration: line-through; color: var(--text-muted); }
+
+.memo-editor__body .tiptap code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+/* Code block */
+.memo-editor__body .tiptap pre {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+  overflow-x: auto;
+}
+
+.memo-editor__body .tiptap pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Blockquote */
+.memo-editor__body .tiptap blockquote {
+  border-left: 3px solid var(--brand-a, #00c2a8);
+  padding-left: 14px;
+  margin: 10px 0;
+  color: var(--text-muted);
+}
+
+/* Lists */
+.memo-editor__body .tiptap ul { list-style: disc; padding-left: 24px; margin: 6px 0; }
+.memo-editor__body .tiptap ol { list-style: decimal; padding-left: 24px; margin: 6px 0; }
+.memo-editor__body .tiptap li { margin: 2px 0; }
+
+/* Task list */
+.memo-editor__body .tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 4px;
+}
+
+.memo-editor__body .tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.memo-editor__body .tiptap ul[data-type="taskList"] li label {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.memo-editor__body .tiptap ul[data-type="taskList"] li label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand-a, #00c2a8);
+  cursor: pointer;
+}
+
+.memo-editor__body .tiptap ul[data-type="taskList"] li div {
+  flex: 1;
+}
+
+/* Horizontal rule */
+.memo-editor__body .tiptap hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 16px 0;
+}
+
+/* Link */
+.memo-editor__body .tiptap a {
+  color: var(--brand-b, #35b8ff);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Placeholder */
+.memo-editor__body .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  opacity: 0.4;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] .memo-editor {
+  border-color: var(--line);
+}
+
+:root[data-theme="light"] .memo-toolbar {
+  border-bottom-color: var(--line);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+:root[data-theme="light"] .memo-toolbar__sep {
+  background: var(--line);
+}
+
+:root[data-theme="light"] .memo-toolbar button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme="light"] .memo-editor__body .tiptap code {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .memo-editor__body .tiptap pre {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--line);
+}
+
+:root[data-theme="light"] .memo-editor__body .tiptap hr {
+  border-top-color: var(--line);
 }

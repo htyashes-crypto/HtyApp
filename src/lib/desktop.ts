@@ -17,8 +17,14 @@ export interface DesktopSaveDialogOptions {
   filters?: DesktopDialogFilter[];
 }
 
+export interface ChangelogEntry {
+  version: string;
+  date: string;
+  changes: string[];
+}
+
 export interface UpdateStatusEvent {
-  type: "checking" | "available" | "not-available" | "downloading" | "downloaded" | "error";
+  type: "checking" | "available" | "not-available" | "downloading" | "downloaded" | "error" | "changelog";
   version?: string;
   releaseNotes?: string;
   percent?: number;
@@ -26,6 +32,7 @@ export interface UpdateStatusEvent {
   transferred?: number;
   total?: number;
   message?: string;
+  changelog?: ChangelogEntry[];
 }
 
 export interface DesktopBridge {
