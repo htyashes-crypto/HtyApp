@@ -34,7 +34,22 @@ npm run dist
 此命令执行：tsc 类型检查 → vite build 构建前端 → electron-builder 打包 exe 并上传 GitHub Releases。
 超时设置为 600000ms（10 分钟）。
 
-### 5. 验证 Release 状态
+### 5. 编写更新日志
+
+打包上传完成后，必须为本次 Release 编写更新日志（Release Notes）：
+
+- 通过 `git log` 查看自上一个版本以来的所有提交，总结本次更新内容
+- 按类别整理：新功能、Bug 修复、优化改进等
+- 使用中文编写，格式清晰
+- 通过 GitHub API 更新 Release body：
+
+```bash
+curl -s -X PATCH -H "Authorization: token $GH_TOKEN" -H "Content-Type: application/json" \
+  -d '{"body": "更新日志内容"}' \
+  https://api.github.com/repos/htyashes-crypto/HtyApp/releases/RELEASE_ID
+```
+
+### 6. 验证 Release 状态
 
 打包完成后，通过 GitHub API 检查 Release 是否为 Draft：
 
@@ -52,7 +67,7 @@ curl -s -X PATCH -H "Authorization: token $GH_TOKEN" -H "Content-Type: applicati
   https://api.github.com/repos/htyashes-crypto/HtyApp/releases/RELEASE_ID
 ```
 
-### 6. 完成报告
+### 7. 完成报告
 
 向用户报告：
 - 发布的版本号

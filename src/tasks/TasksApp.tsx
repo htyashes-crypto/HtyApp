@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Loader2, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { tasksApi } from "../tools-shared/tools-api";
 import type { TaskItem, TaskGroup, TaskPriority, TaskStatus } from "../tools-shared/tools-types";
+import { confirm as confirmDialog } from "../state/confirm-store";
 
 type FilterMode = "all" | "active" | "completed";
 
@@ -183,9 +184,10 @@ export function TasksApp() {
                 <button
                   type="button"
                   className="tasks-group-item__delete"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    if (confirm(t("tasks.deleteGroup"))) deleteGroupMutation.mutate(group.id);
+                    const ok = await confirmDialog("HtySkillManager", t("tasks.deleteGroup"), true);
+                    if (ok) deleteGroupMutation.mutate(group.id);
                   }}
                 >
                   <Trash2 size={12} />
