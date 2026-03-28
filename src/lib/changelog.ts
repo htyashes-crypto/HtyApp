@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.5.2",
+    date: "2026-03-28",
+    changes: [
+      "增强远程更新日志拉取的健壮性和日志输出",
+      "修复更新已下载状态下版本号插值显示问题"
+    ]
+  },
+  {
     version: "0.5.1",
     date: "2026-03-28",
     changes: [

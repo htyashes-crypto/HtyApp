@@ -44,6 +44,7 @@ function initAutoUpdater(win) {
     sendUpdateStatus("downloaded", {
       version: info.version
     });
+    fetchRemoteChangelog(info.version);
   });
 
   autoUpdater.on("error", (error) => {
@@ -84,27 +85,38 @@ function initAutoUpdater(win) {
   }, 3000);
 }
 
+let changelogFetched = false;
+
 function fetchRemoteChangelog(version) {
+  if (changelogFetched) return;
   const tag = `v${version}`;
   const url = `https://raw.githubusercontent.com/htyashes-crypto/HtyApp/${tag}/changelog.json`;
-  const request = net.request(url);
-  let body = "";
-  request.on("response", (response) => {
-    if (response.statusCode !== 200) return;
-    response.on("data", (chunk) => { body += chunk.toString(); });
-    response.on("end", () => {
-      try {
-        const entries = JSON.parse(body);
-        sendUpdateStatus("changelog", { changelog: entries });
-      } catch {
-        // ignore parse errors
-      }
+  console.log("[UPDATER] fetching changelog from:", url);
+  try {
+    const request = net.request(url);
+    let body = "";
+    request.on("response", (response) => {
+      console.log("[UPDATER] changelog response status:", response.statusCode);
+      if (response.statusCode !== 200) return;
+      response.on("data", (chunk) => { body += chunk.toString(); });
+      response.on("end", () => {
+        try {
+          const entries = JSON.parse(body);
+          changelogFetched = true;
+          sendUpdateStatus("changelog", { changelog: entries });
+          console.log("[UPDATER] changelog sent to renderer, entries:", entries.length);
+        } catch (e) {
+          console.error("[UPDATER] changelog parse error:", e);
+        }
+      });
     });
-  });
-  request.on("error", () => {
-    // silent fail — changelog is optional
-  });
-  request.end();
+    request.on("error", (err) => {
+      console.error("[UPDATER] changelog fetch error:", err);
+    });
+    request.end();
+  } catch (err) {
+    console.error("[UPDATER] changelog request failed:", err);
+  }
 }
 
 module.exports = { initAutoUpdater };
