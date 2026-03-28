@@ -214,7 +214,28 @@
     "titlePlaceholder": "Title",
     "filterAll": "All",
     "manageGroups": "Manage Groups",
-    "newGroupPlaceholder": "New group name"
+    "newGroupPlaceholder": "New group name",
+    "toolbar": {
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "heading4": "Heading 4",
+      "bold": "Bold (Ctrl+B)",
+      "italic": "Italic (Ctrl+I)",
+      "underline": "Underline (Ctrl+U)",
+      "strike": "Strikethrough",
+      "code": "Inline Code",
+      "bulletList": "Bullet List",
+      "orderedList": "Ordered List",
+      "taskList": "Task List",
+      "quote": "Quote",
+      "codeBlock": "Code Block",
+      "horizontalRule": "Horizontal Rule",
+      "link": "Link (Ctrl+K)",
+      "undo": "Undo (Ctrl+Z)",
+      "redo": "Redo (Ctrl+Shift+Z)",
+      "spellcheck": "Spellcheck"
+    }
   },
   "tasks": {
     "add": "Add Task",

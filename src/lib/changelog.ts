@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.5.3",
+    date: "2026-03-28",
+    changes: [
+      "编辑器工具栏按钮提示本地化（中/英）",
+      "新增拼写检查开关按钮，状态持久记忆"
+    ]
+  },
+  {
     version: "0.5.2",
     date: "2026-03-28",
     changes: [

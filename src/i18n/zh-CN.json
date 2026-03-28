@@ -214,7 +214,28 @@
     "titlePlaceholder": "标题",
     "filterAll": "全部",
     "manageGroups": "管理分组",
-    "newGroupPlaceholder": "新分组名称"
+    "newGroupPlaceholder": "新分组名称",
+    "toolbar": {
+      "heading1": "一级标题",
+      "heading2": "二级标题",
+      "heading3": "三级标题",
+      "heading4": "四级标题",
+      "bold": "加粗 (Ctrl+B)",
+      "italic": "斜体 (Ctrl+I)",
+      "underline": "下划线 (Ctrl+U)",
+      "strike": "删除线",
+      "code": "行内代码",
+      "bulletList": "无序列表",
+      "orderedList": "有序列表",
+      "taskList": "任务列表",
+      "quote": "引用",
+      "codeBlock": "代码块",
+      "horizontalRule": "分隔线",
+      "link": "链接 (Ctrl+K)",
+      "undo": "撤销 (Ctrl+Z)",
+      "redo": "重做 (Ctrl+Shift+Z)",
+      "spellcheck": "拼写检查"
+    }
   },
   "tasks": {
     "add": "添加任务",
