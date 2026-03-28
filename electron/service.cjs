@@ -43,6 +43,8 @@ class DesktopService {
     this.libraryPath = path.join(this.baseDir, "library.json");
     this.storeDir = path.join(this.baseDir, "store", "skills");
     this.mergeSessionsDir = path.join(this.baseDir, "merge-sessions");
+    this._libraryCache = null;
+    this._libraryCacheMtimeMs = 0;
     this.init();
   }
 
@@ -89,7 +91,7 @@ class DesktopService {
       case "update_bound_instance":
         return this.updateBoundInstance(args.request);
       case "list_activity":
-        return this.listActivity();
+        return this.listActivity(args);
       case "create_backup":
         return this.createBackup(args.workspaceRoot, args.relativePath);
       case "delete_skill":
@@ -118,6 +120,8 @@ class DesktopService {
         return this.getMarketSettings();
       case "update_market_settings":
         return this.updateMarketSettings(args.request);
+      case "batch_update_instances":
+        return this.batchUpdateInstances(args.items);
       default:
         throw new Error(`unknown desktop command: ${command}`);
     }
@@ -145,11 +149,20 @@ class DesktopService {
 
   loadLibrary() {
     ensureLibraryFile(this.libraryPath);
-    return JSON.parse(fs.readFileSync(this.libraryPath, "utf8"));
+    const stat = fs.statSync(this.libraryPath);
+    if (this._libraryCache && stat.mtimeMs === this._libraryCacheMtimeMs) {
+      return JSON.parse(JSON.stringify(this._libraryCache));
+    }
+    const data = JSON.parse(fs.readFileSync(this.libraryPath, "utf8"));
+    this._libraryCache = data;
+    this._libraryCacheMtimeMs = stat.mtimeMs;
+    return JSON.parse(JSON.stringify(data));
   }
 
   saveLibrary(data) {
     fs.writeFileSync(this.libraryPath, JSON.stringify(data, null, 2), "utf8");
+    this._libraryCache = JSON.parse(JSON.stringify(data));
+    this._libraryCacheMtimeMs = fs.statSync(this.libraryPath).mtimeMs;
   }
 
   getDashboard() {
@@ -157,12 +170,38 @@ class DesktopService {
     const workspaces = this.listWorkspaces();
     let localInstanceCount = 0;
     let unboundInstanceCount = 0;
+    const outdatedInstances = [];
+
+    const skillMap = new Map();
+    for (const entry of data.skills) {
+      skillMap.set(entry.skill.skillId, entry.skill);
+    }
 
     for (const workspace of workspaces) {
       try {
         const snapshot = this.scanWorkspace(workspace.rootPath, workspace.name);
         localInstanceCount += snapshot.instances.length;
         unboundInstanceCount += snapshot.instances.filter((instance) => instance.status === "unbound").length;
+
+        for (const inst of snapshot.instances) {
+          if (inst.status !== "bound" || !inst.linkedSkillId || !inst.appliedVersion) continue;
+          const skill = skillMap.get(inst.linkedSkillId);
+          if (!skill || !skill.latestVersion) continue;
+          if (inst.appliedVersion !== skill.latestVersion) {
+            outdatedInstances.push({
+              workspaceId: workspace.workspaceId,
+              workspaceName: workspace.name,
+              workspaceRoot: workspace.rootPath,
+              instanceId: inst.instanceId,
+              instanceName: inst.displayName,
+              provider: inst.provider,
+              currentVersion: inst.appliedVersion,
+              latestVersion: skill.latestVersion,
+              skillId: skill.skillId,
+              skillName: skill.name
+            });
+          }
+        }
       } catch {
         // ignore unavailable workspaces during dashboard aggregation
       }
@@ -174,7 +213,8 @@ class DesktopService {
       workspaceCount: workspaces.length,
       localInstanceCount,
       unboundInstanceCount,
-      recentActivities: this.listActivity(),
+      outdatedInstances,
+      recentActivities: this.listActivity({ limit: 8 }),
       libraryRoot: normalizePath(this.baseDir),
       storeRoot: normalizePath(this.storeDir)
     };
@@ -465,11 +505,22 @@ class DesktopService {
     return this.scanWorkspace(workspaceRoot, workspaceName);
   }
 
-  listActivity() {
+  listActivity(filters = {}) {
     const data = this.loadLibrary();
-    return [...data.activities]
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
-      .slice(0, 30);
+    let result = [...data.activities]
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    if (filters.kind) {
+      result = result.filter((a) => a.kind === filters.kind);
+    }
+    if (filters.search) {
+      const needle = filters.search.toLowerCase();
+      result = result.filter((a) =>
+        a.title.toLowerCase().includes(needle) ||
+        a.detail.toLowerCase().includes(needle)
+      );
+    }
+    const limit = filters.limit || 100;
+    return result.slice(0, limit);
   }
 
   bindLocalInstance(request) {
@@ -524,6 +575,37 @@ class DesktopService {
     const data = this.loadLibrary();
     const skillIds = new Set(data.skills.map((s) => s.skill.skillId));
     return localInstanceFromIndex(workspace, this.displayIndexPath(context, indexPath), index, skillIds);
+  }
+
+  batchUpdateInstances(items = []) {
+    const results = { updated: 0, skipped: 0, conflicted: 0, failed: 0, details: [] };
+    for (const item of items) {
+      try {
+        const preview = this.prepareUpdateMerge({
+          workspaceRoot: item.workspaceRoot,
+          instanceId: item.instanceId,
+          force: false
+        });
+        if (preview.action === "noop") {
+          results.skipped++;
+          results.details.push({ instanceId: item.instanceId, status: "skipped" });
+          continue;
+        }
+        if (preview.action === "needs_resolution") {
+          this.discardMergeSession(preview.sessionId);
+          results.conflicted++;
+          results.details.push({ instanceId: item.instanceId, status: "conflicted" });
+          continue;
+        }
+        this.commitMergeSession({ sessionId: preview.sessionId });
+        results.updated++;
+        results.details.push({ instanceId: item.instanceId, status: "updated" });
+      } catch (err) {
+        results.failed++;
+        results.details.push({ instanceId: item.instanceId, status: "failed", error: err.message });
+      }
+    }
+    return results;
   }
 
   publishToGlobal(request) {

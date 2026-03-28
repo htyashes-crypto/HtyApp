@@ -14,6 +14,7 @@ import type {
 } from "../lib/types";
 import { formatDate } from "../lib/utils";
 import { ProviderPills } from "../components/shared/ProviderPills";
+import { confirm } from "../state/confirm-store";
 
 interface MarketPageProps {
   registry: MarketRegistry | null;
@@ -102,7 +103,7 @@ export function MarketPage({ registry, isLoading, error, onRefresh, localLibrary
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("NAME_CONFLICT")) {
-        const confirmed = window.confirm(`全局库中已有同名技能 "${skill.name}"，是否替换？`);
+        const confirmed = await confirm("\u540d\u79f0\u51b2\u7a81", `\u5168\u5c40\u5e93\u4e2d\u5df2\u6709\u540c\u540d\u6280\u80fd "${skill.name}"\uff0c\u662f\u5426\u66ff\u6362\uff1f`);
         if (confirmed) {
           downloadMutation.mutate({ ...req, forceReplace: true });
         }

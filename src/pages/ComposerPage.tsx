@@ -8,6 +8,7 @@ import type { ComposerFile, Provider, WorkspaceRecord } from "../lib/types";
 import { parseFrontmatter, serializeFrontmatter, toKebabCase, renderMarkdown } from "../lib/composer-utils";
 import { SKILL_TEMPLATES, type SkillTemplate } from "../lib/composer-templates";
 import { useUiStore } from "../state/ui-store";
+import { confirm } from "../state/confirm-store";
 
 interface ComposerPageProps {
   workspaces: WorkspaceRecord[];
@@ -158,7 +159,7 @@ export function ComposerPage({ workspaces }: ComposerPageProps) {
         skillName: dirName
       });
       if (resolved.exists && !composerSkillDir) {
-        const ok = window.confirm(t("composer.overwriteConfirm", { name: dirName }));
+        const ok = await confirm(t("composer.overwriteTitle", { defaultValue: "\u8986\u76d6\u786e\u8ba4" }), t("composer.overwriteConfirm", { name: dirName }));
         if (!ok) throw new Error("cancelled");
       }
       return api.composerWriteSkillDir({ dirPath: resolved.dirPath, files });

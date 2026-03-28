@@ -4,6 +4,8 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { TopBar } from "../components/layout/TopBar";
 import { AppTabBar } from "../components/layout/AppTabBar";
 import { UserProfileBar } from "../components/layout/UserProfileBar";
+import { ConfirmDialog } from "../components/dialogs/ConfirmDialog";
+import { confirm } from "../state/confirm-store";
 import { InstallDialog } from "../components/dialogs/InstallDialog";
 import { MergeConflictDialog } from "../components/dialogs/MergeConflictDialog";
 import { PublishDialog } from "../components/dialogs/PublishDialog";
@@ -16,6 +18,9 @@ import type { MergeSessionSummary } from "../lib/merge-types";
 import { pickExportPackagePath, pickImportPackagePath, pickWorkspaceRoot } from "../lib/dialogs";
 import type { LocalInstance } from "../lib/types";
 import { UpdateDialog } from "../components/UpdateDialog";
+import { CommandPalette } from "../components/shared/CommandPalette";
+import { ToastContainer } from "../components/shared/ToastContainer";
+import { toast } from "../state/toast-store";
 import { useUiStore } from "../state/ui-store";
 import { OverviewPage } from "../pages/OverviewPage";
 import { GlobalLibraryPage } from "../pages/GlobalLibraryPage";
@@ -37,6 +42,9 @@ export function App() {
       <UserProfileBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <UpdateDialog />
+      <ToastContainer />
+      <ConfirmDialog />
+      <CommandPalette />
     </div>
   );
 }
@@ -65,7 +73,7 @@ function SkillApp() {
   const dashboardQuery = useQuery({ queryKey: ["dashboard"], queryFn: api.getDashboard });
   const libraryQuery = useQuery({ queryKey: ["library"], queryFn: api.listLibrary });
   const workspacesQuery = useQuery({ queryKey: ["workspaces"], queryFn: api.listWorkspaces });
-  const activityQuery = useQuery({ queryKey: ["activity"], queryFn: api.listActivity });
+  const activityQuery = useQuery({ queryKey: ["activity"], queryFn: () => api.listActivity() });
 
   const DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/htyashes-crypto/hty-skill-market/main/registry.json";
   const marketQuery = useQuery({
@@ -218,10 +226,15 @@ function SkillApp() {
     if (!workspaceRoot) {
       return;
     }
-    const snapshot = await api.scanWorkspace(workspaceRoot);
-    setSelectedWorkspaceId(snapshot.workspace.workspaceId);
-    setRoute("projects");
-    await invalidateCoreQueries();
+    try {
+      const snapshot = await api.scanWorkspace(workspaceRoot);
+      setSelectedWorkspaceId(snapshot.workspace.workspaceId);
+      setRoute("projects");
+      await invalidateCoreQueries();
+      toast("success", `\u5de5\u4f5c\u533a\u5df2\u6dfb\u52a0\uff0c\u53d1\u73b0 ${snapshot.instances.length} \u4e2a\u5b9e\u4f8b`);
+    } catch (err: unknown) {
+      toast("error", `\u6dfb\u52a0\u5de5\u4f5c\u533a\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const handleRefreshWorkspace = async () => {
@@ -271,26 +284,32 @@ function SkillApp() {
       return;
     }
 
-    const { autoApprove } = useUiStore.getState();
+    try {
+      const { autoApprove } = useUiStore.getState();
 
-    const preview = await api.prepareUpdateMerge({
-      workspaceRoot: selectedWorkspace.rootPath,
-      instanceId,
-      force: !autoApprove
-    });
+      const preview = await api.prepareUpdateMerge({
+        workspaceRoot: selectedWorkspace.rootPath,
+        instanceId,
+        force: !autoApprove
+      });
 
-    if (preview.action === "noop") {
-      return preview.message;
+      if (preview.action === "noop") {
+        toast("info", preview.message || "\u5df2\u662f\u6700\u65b0\u7248\u672c");
+        return preview.message;
+      }
+
+      if (preview.action === "needs_resolution" || !autoApprove) {
+        setMergeSession(preview);
+        return;
+      }
+
+      const response = await api.commitMergeSession({ sessionId: preview.sessionId });
+      await invalidateCoreQueries();
+      toast("success", response.message || "\u66f4\u65b0\u6210\u529f");
+      return response.message;
+    } catch (err: unknown) {
+      toast("error", `\u66f4\u65b0\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    if (preview.action === "needs_resolution" || !autoApprove) {
-      setMergeSession(preview);
-      return;
-    }
-
-    const response = await api.commitMergeSession({ sessionId: preview.sessionId });
-    await invalidateCoreQueries();
-    return response.message;
   };
 
   const handleRollbackInstance = async (instanceId: string, targetVersion: string) => {
@@ -298,27 +317,33 @@ function SkillApp() {
       return;
     }
 
-    const { autoApprove } = useUiStore.getState();
+    try {
+      const { autoApprove } = useUiStore.getState();
 
-    const preview = await api.prepareUpdateMerge({
-      workspaceRoot: selectedWorkspace.rootPath,
-      instanceId,
-      targetVersion,
-      force: !autoApprove
-    });
+      const preview = await api.prepareUpdateMerge({
+        workspaceRoot: selectedWorkspace.rootPath,
+        instanceId,
+        targetVersion,
+        force: !autoApprove
+      });
 
-    if (preview.action === "noop") {
-      return preview.message;
+      if (preview.action === "noop") {
+        toast("info", preview.message || "\u5df2\u662f\u76ee\u6807\u7248\u672c");
+        return preview.message;
+      }
+
+      if (preview.action === "needs_resolution" || !autoApprove) {
+        setMergeSession(preview);
+        return;
+      }
+
+      const response = await api.commitMergeSession({ sessionId: preview.sessionId });
+      await invalidateCoreQueries();
+      toast("success", response.message || "\u56de\u6eda\u6210\u529f");
+      return response.message;
+    } catch (err: unknown) {
+      toast("error", `\u56de\u6eda\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    if (preview.action === "needs_resolution" || !autoApprove) {
-      setMergeSession(preview);
-      return;
-    }
-
-    const response = await api.commitMergeSession({ sessionId: preview.sessionId });
-    await invalidateCoreQueries();
-    return response.message;
   };
 
   const handleImportPackage = async () => {
@@ -326,8 +351,13 @@ function SkillApp() {
     if (!packagePath) {
       return;
     }
-    await api.importPackage({ packagePath });
-    await invalidateCoreQueries();
+    try {
+      const result = await api.importPackage({ packagePath });
+      await invalidateCoreQueries();
+      toast("success", result.message || "\u5305\u5bfc\u5165\u6210\u529f");
+    } catch (err: unknown) {
+      toast("error", `\u5bfc\u5165\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const handleExportPackage = async () => {
@@ -342,12 +372,17 @@ function SkillApp() {
     if (!outputPath) {
       return;
     }
-    await api.exportPackage({
-      skillId: detail.skill.skillId,
-      version: latestVersion.version,
-      outputPath
-    });
-    await invalidateCoreQueries();
+    try {
+      await api.exportPackage({
+        skillId: detail.skill.skillId,
+        version: latestVersion.version,
+        outputPath
+      });
+      await invalidateCoreQueries();
+      toast("success", `\u5df2\u5bfc\u51fa ${detail.skill.name} v${latestVersion.version}`);
+    } catch (err: unknown) {
+      toast("error", `\u5bfc\u51fa\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const settingsQuery = useQuery({ queryKey: ["app-settings"], queryFn: api.getAppSettings });
@@ -367,11 +402,16 @@ function SkillApp() {
     if (!selectedSkillId) return;
     const skill = libraryItems.find((s) => s.skillId === selectedSkillId);
     if (!skill) return;
-    const confirmed = window.confirm(`确认删除 "${skill.name}" 及其所有版本？此操作不可撤销。`);
-    if (!confirmed) return;
-    await api.deleteSkill(selectedSkillId);
-    setSelectedSkillId(null);
-    await invalidateCoreQueries();
+    const ok = await confirm("\u5220\u9664\u6280\u80fd", `\u786e\u8ba4\u5220\u9664 "${skill.name}" \u53ca\u5176\u6240\u6709\u7248\u672c\uff1f\u6b64\u64cd\u4f5c\u4e0d\u53ef\u64a4\u9500\u3002`, true);
+    if (!ok) return;
+    try {
+      await api.deleteSkill(selectedSkillId);
+      setSelectedSkillId(null);
+      await invalidateCoreQueries();
+      toast("success", `\u5df2\u5220\u9664 "${skill.name}"`);
+    } catch (err: unknown) {
+      toast("error", `\u5220\u9664\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const content = (() => {

@@ -75,15 +75,46 @@ export interface ActivityRecord {
   createdAt: string;
 }
 
+export interface OutdatedInstance {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceRoot: string;
+  instanceId: string;
+  instanceName: string;
+  provider: Provider;
+  currentVersion: string;
+  latestVersion: string;
+  skillId: string;
+  skillName: string;
+}
+
 export interface DashboardSummary {
   globalSkillCount: number;
   versionCount: number;
   workspaceCount: number;
   localInstanceCount: number;
   unboundInstanceCount: number;
+  outdatedInstances: OutdatedInstance[];
   recentActivities: ActivityRecord[];
   libraryRoot: string;
   storeRoot: string;
+}
+
+export interface BatchUpdateItem {
+  workspaceRoot: string;
+  instanceId: string;
+}
+
+export interface BatchUpdateResult {
+  updated: number;
+  skipped: number;
+  conflicted: number;
+  failed: number;
+  details: Array<{
+    instanceId: string;
+    status: "updated" | "skipped" | "conflicted" | "failed";
+    error?: string;
+  }>;
 }
 
 export interface AppSettings {

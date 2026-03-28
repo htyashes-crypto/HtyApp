@@ -1,6 +1,8 @@
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import type {
   GlobalSkillDetail,
   GlobalSkillSummary,
@@ -9,7 +11,9 @@ import type {
   WorkspaceRecord,
   WorkspaceSnapshot
 } from "../lib/types";
+import { api } from "../lib/api";
 import { ProviderPills } from "../components/shared/ProviderPills";
+import { toast } from "../state/toast-store";
 
 type ProviderFilter = "all" | Provider;
 
@@ -55,6 +59,7 @@ export function ProjectsPage({
   onRollbackInstance
 }: ProjectsPageProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [binding, setBinding] = useState(false);
   const [rollbackVersion, setRollbackVersion] = useState<string>("");
   const [rollingBack, setRollingBack] = useState(false);
@@ -62,6 +67,7 @@ export function ProjectsPage({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>("all");
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   const summary = useMemo(() => {
     const instances = snapshot?.instances ?? [];
@@ -91,6 +97,61 @@ export function ProjectsPage({
       );
     });
   }, [providerFilter, search, snapshot]);
+
+  // Clear checked ids when workspace changes
+  useEffect(() => {
+    setCheckedIds(new Set());
+  }, [selectedWorkspaceId]);
+
+  const boundFilteredIds = useMemo(
+    () => new Set(filteredInstances.filter((i) => i.status === "bound").map((i) => i.instanceId)),
+    [filteredInstances]
+  );
+
+  const allBoundChecked = boundFilteredIds.size > 0 && [...boundFilteredIds].every((id) => checkedIds.has(id));
+
+  const toggleCheck = (id: string) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCheckAll = () => {
+    if (allBoundChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(boundFilteredIds));
+    }
+  };
+
+  const batchMutation = useMutation({
+    mutationFn: () => {
+      const workspaceRoot = snapshot?.workspace.rootPath;
+      if (!workspaceRoot) throw new Error("No workspace");
+      const items = [...checkedIds].map((instanceId) => ({ workspaceRoot, instanceId }));
+      return api.batchUpdateInstances(items);
+    },
+    onSuccess: async (result) => {
+      const parts: string[] = [];
+      if (result.updated > 0) parts.push(`${result.updated} \u4e2a\u5df2\u66f4\u65b0`);
+      if (result.skipped > 0) parts.push(`${result.skipped} \u4e2a\u5df2\u8df3\u8fc7`);
+      if (result.conflicted > 0) parts.push(`${result.conflicted} \u4e2a\u6709\u51b2\u7a81`);
+      if (result.failed > 0) parts.push(`${result.failed} \u4e2a\u5931\u8d25`);
+      toast(result.failed > 0 || result.conflicted > 0 ? "info" : "success", parts.join("\uff0c"));
+      setCheckedIds(new Set());
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["workspace", snapshot?.workspace.rootPath] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["activity"] })
+      ]);
+    },
+    onError: (err) => {
+      toast("error", `\u6279\u91cf\u66f4\u65b0\u5931\u8d25: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  });
 
   const workspacePathLabel = snapshot?.workspace.kind === "special"
     ? t("projects.specialDir")
@@ -242,6 +303,33 @@ export function ProjectsPage({
               <div><h3>{t("projects.instanceList")}</h3></div>
             </div>
 
+            {checkedIds.size > 0 && (
+              <div className="batch-action-bar">
+                <span className="batch-action-bar__count">
+                  {t("projects.batchSelected", { count: checkedIds.size, defaultValue: `\u5df2\u9009\u62e9 ${checkedIds.size} \u4e2a\u5b9e\u4f8b` })}
+                </span>
+                <button
+                  type="button"
+                  className="button button--primary batch-action-bar__btn"
+                  disabled={batchMutation.isPending}
+                  onClick={() => batchMutation.mutate()}
+                >
+                  {batchMutation.isPending ? (
+                    <><RefreshCw size={12} className="spin" /> {t("common.processing")}</>
+                  ) : (
+                    t("projects.batchUpdate", { defaultValue: "\u6279\u91cf\u66f4\u65b0" })
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="button button--ghost batch-action-bar__btn"
+                  onClick={() => setCheckedIds(new Set())}
+                >
+                  {t("projects.batchClear", { defaultValue: "\u53d6\u6d88\u9009\u62e9" })}
+                </button>
+              </div>
+            )}
+
             <div className="projects-provider-tabs" role="tablist" aria-label="provider filter">
               {([
                 { key: "all", label: t("projects.allProviders") },
@@ -262,6 +350,14 @@ export function ProjectsPage({
 
             <div className="projects-instance-table">
               <div className="projects-instance-table__head">
+                <span className="projects-instance-table__check">
+                  <input
+                    type="checkbox"
+                    checked={allBoundChecked}
+                    onChange={toggleCheckAll}
+                    title={t("projects.batchSelectAll", { defaultValue: "\u5168\u9009\u5df2\u7ed1\u5b9a" })}
+                  />
+                </span>
                 <span>{t("projects.headerName")}</span>
                 <span>{t("projects.headerProvider")}</span>
                 <span>{t("projects.headerIndexVersion")}</span>
@@ -281,6 +377,17 @@ export function ProjectsPage({
                       onClick={() => onSelectInstance(instance)}
                       onKeyDown={(event) => handleInstanceKeyDown(event, instance)}
                     >
+                      <span className="projects-instance-table__check" onClick={(e) => e.stopPropagation()}>
+                        {instance.status === "bound" ? (
+                          <input
+                            type="checkbox"
+                            checked={checkedIds.has(instance.instanceId)}
+                            onChange={() => toggleCheck(instance.instanceId)}
+                          />
+                        ) : (
+                          <span />
+                        )}
+                      </span>
                       <div className="projects-instance-row__name">
                         <strong>{instance.displayName}</strong>
                       </div>

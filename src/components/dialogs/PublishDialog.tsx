@@ -7,6 +7,7 @@ import type { MergeSessionSummary } from "../../lib/merge-types";
 import type { GlobalSkillSummary, LocalInstance, Provider, PublishMode } from "../../lib/types";
 import { providerLabel } from "../../lib/utils";
 import { useUiStore } from "../../state/ui-store";
+import { confirm } from "../../state/confirm-store";
 
 interface PublishDialogProps {
   open: boolean;
@@ -134,7 +135,7 @@ export function PublishDialog({
     } catch (caught) {
       const msg = caught instanceof Error ? caught.message : String(caught);
       if (msg.includes("NAME_CONFLICT")) {
-        const confirmed = window.confirm(`全局库中已有同名技能 "${name}"，是否替换？`);
+        const confirmed = await confirm("\u540d\u79f0\u51b2\u7a81", `\u5168\u5c40\u5e93\u4e2d\u5df2\u6709\u540c\u540d\u6280\u80fd "${name}"\uff0c\u662f\u5426\u66ff\u6362\uff1f`);
         if (confirmed) {
           try {
             await api.publishToGlobal({

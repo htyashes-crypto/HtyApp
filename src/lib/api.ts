@@ -1,6 +1,8 @@
 import type {
   ActivityRecord,
   AppSettings,
+  BatchUpdateItem,
+  BatchUpdateResult,
   BindRequest,
   DashboardSummary,
   ExportPackageRequest,
@@ -146,10 +148,13 @@ export const api = {
       ? call<LocalInstance>("update_bound_instance", { request })
       : mockApi.updateBoundInstance(request);
   },
-  async listActivity(): Promise<ActivityRecord[]> {
+  async listActivity(filters?: { kind?: string; search?: string; limit?: number }): Promise<ActivityRecord[]> {
     return isDesktopRuntime()
-      ? call<ActivityRecord[]>("list_activity")
+      ? call<ActivityRecord[]>("list_activity", filters ?? {})
       : mockApi.listActivity();
+  },
+  async batchUpdateInstances(items: BatchUpdateItem[]): Promise<BatchUpdateResult> {
+    return call<BatchUpdateResult>("batch_update_instances", { items });
   },
   async createBackup(workspaceRoot: string, relativePath: string): Promise<string> {
     return isDesktopRuntime()

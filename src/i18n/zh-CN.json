@@ -50,7 +50,12 @@
     "workspacesTitle": "接入的工作区",
     "workspacesDesc": "每个工作区都维护自己独立的 `.htyskillmanager` 索引",
     "special": "特殊",
-    "noProvider": "无可用 provider"
+    "noProvider": "无可用 provider",
+    "outdatedInstance": "可更新实例",
+    "outdatedInstanceDesc": "本地实例落后于全局库版本",
+    "outdatedTitle": "可更新实例",
+    "outdatedDesc": "以下本地实例的版本落后于全局库",
+    "updateAll": "全部更新"
   },
   "projects": {
     "specialWorkspace": "特殊工作区",

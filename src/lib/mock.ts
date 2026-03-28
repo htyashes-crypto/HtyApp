@@ -372,6 +372,7 @@ export const mockApi: any = {
       workspaceCount: state.workspaces.length,
       localInstanceCount,
       unboundInstanceCount,
+      outdatedInstances: [],
       recentActivities: state.activities.slice(0, 8),
       libraryRoot: state.settings.libraryRoot,
       storeRoot: state.settings.storeRoot

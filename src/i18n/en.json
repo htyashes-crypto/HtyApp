@@ -50,7 +50,12 @@
     "workspacesTitle": "Connected Workspaces",
     "workspacesDesc": "Each workspace maintains its own independent `.htyskillmanager` index",
     "special": "Special",
-    "noProvider": "No available providers"
+    "noProvider": "No available providers",
+    "outdatedInstance": "Outdated Instances",
+    "outdatedInstanceDesc": "Local instances behind global library versions",
+    "outdatedTitle": "Outdated Instances",
+    "outdatedDesc": "These local instances are behind the global library",
+    "updateAll": "Update All"
   },
   "projects": {
     "specialWorkspace": "Special Workspace",
