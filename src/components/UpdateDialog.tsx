@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Loader2, RefreshCw, RotateCcw, X } from "lucide-react";
 import { getDesktopBridge, type UpdateStatusEvent, type ChangelogEntry } from "../lib/desktop";
-import { changelog as localChangelog } from "../lib/changelog";
 
 type UpdatePhase = "idle" | "available" | "downloading" | "downloaded" | "error";
 
@@ -53,8 +52,7 @@ export function UpdateDialog() {
     return () => { bridge.removeUpdateStatus(listener); };
   }, [t]);
 
-  // Use remote changelog if available, otherwise fall back to local
-  const changelogSource = remoteChangelog ?? localChangelog;
+  const changelogSource = remoteChangelog ?? [];
 
   const newEntries = useMemo(() => {
     if (!version) return [];
