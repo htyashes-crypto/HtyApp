@@ -1,0 +1,380 @@
+/* ── Download App ── */
+
+.dl-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+
+.dl-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dl-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dl-toolbar__filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dl-toolbar__filter-btn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.dl-toolbar__filter-btn:hover {
+  background: rgba(126, 153, 182, 0.05);
+}
+
+.dl-toolbar__filter-btn.is-active {
+  border-color: rgba(53, 184, 255, 0.32);
+  background: rgba(53, 184, 255, 0.06);
+  color: var(--text);
+}
+
+.dl-toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  color: var(--text-muted);
+}
+
+.dl-toolbar__search input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 12px;
+  width: 180px;
+}
+
+.dl-toolbar__search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Body / Empty ── */
+
+.dl-app__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+
+.dl-app__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Status bar ── */
+
+.dl-app__status-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Download List ── */
+
+.dl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Download Card ── */
+
+.dl-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.dl-card:hover {
+  border-color: var(--line-strong);
+}
+
+.dl-card--downloading {
+  border-color: rgba(53, 184, 255, 0.25);
+}
+
+.dl-card--completed {
+  border-color: rgba(0, 194, 168, 0.25);
+}
+
+.dl-card--failed {
+  border-color: rgba(255, 90, 90, 0.25);
+}
+
+.dl-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dl-card__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dl-card__name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dl-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.dl-card__speed {
+  color: var(--brand-a);
+  font-weight: 500;
+}
+
+.dl-card__percent {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Progress bar ── */
+
+.dl-card__progress {
+  height: 4px;
+  background: var(--panel-soft);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dl-card__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-a), var(--brand-b));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.dl-card--paused .dl-card__progress-bar {
+  background: var(--text-muted);
+}
+
+.dl-card--failed .dl-card__progress-bar {
+  background: rgba(255, 90, 90, 0.6);
+}
+
+/* ── Segments ── */
+
+.dl-card__segments {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+}
+
+.dl-card__segment {
+  background: var(--panel-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 4px;
+}
+
+.dl-card__segment-fill {
+  height: 100%;
+  background: var(--brand-a);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ── Error ── */
+
+.dl-card__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 90, 90, 0.9);
+}
+
+/* ── Status label ── */
+
+.dl-card__status-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Actions ── */
+
+.dl-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+/* ── Add Download Dialog ── */
+
+.dl-add-dialog {
+  width: 520px;
+}
+
+.dl-add-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.dl-add-dialog__field label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dl-add-dialog__field input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.dl-add-dialog__field input[type="text"]:focus {
+  border-color: rgba(53, 184, 255, 0.4);
+}
+
+.dl-add-dialog__path-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dl-add-dialog__path-row input {
+  flex: 1;
+}
+
+.dl-add-dialog__segments-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dl-add-dialog__segments-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--brand-a);
+}
+
+.dl-add-dialog__segments-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 24px;
+  text-align: center;
+}
+
+/* ── Settings Dialog ── */
+
+.dl-settings-dialog {
+  width: 460px;
+}
+
+.dl-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.dl-settings__field label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dl-settings__field input[type="text"],
+.dl-settings__field input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.dl-settings__field input[type="text"]:focus,
+.dl-settings__field input[type="number"]:focus {
+  border-color: rgba(53, 184, 255, 0.4);
+}
+
+.dl-settings__path-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dl-settings__path-row input {
+  flex: 1;
+}
+
+.dl-settings__field--check label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.dl-settings__field--check input[type="checkbox"] {
+  accent-color: var(--brand-a);
+}

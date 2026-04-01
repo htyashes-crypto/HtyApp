@@ -15,6 +15,7 @@ import { TasksApp } from "../tasks/TasksApp";
 import { MarksApp } from "../marks/MarksApp";
 import { MemosApp } from "../memos/MemosApp";
 import { GameApp } from "../game/GameApp";
+import { DownloadApp } from "../download/DownloadApp";
 
 import { api } from "../lib/api";
 import type { MergeSessionSummary } from "../lib/merge-types";
@@ -40,7 +41,7 @@ export function App() {
     <div className="app-root">
       <AppTabBar />
       <div className="app-root__body">
-        {activeTab === "skill" ? <SkillApp /> : activeTab === "sync" ? <SyncApp /> : activeTab === "tasks" ? <TasksApp /> : activeTab === "marks" ? <MarksApp /> : activeTab === "memos" ? <MemosApp /> : <GameApp />}
+        {activeTab === "skill" ? <SkillApp /> : activeTab === "sync" ? <SyncApp /> : activeTab === "tasks" ? <TasksApp /> : activeTab === "marks" ? <MarksApp /> : activeTab === "memos" ? <MemosApp /> : activeTab === "download" ? <DownloadApp /> : <GameApp />}
       </div>
       <UserProfileBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />

@@ -4,6 +4,7 @@ const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const { createDesktopService } = require("./service.cjs");
 const { createSyncService } = require("./sync-service.cjs");
 const { createToolsService } = require("./tools-service.cjs");
+const { createDownloadService } = require("./download-service.cjs");
 const { initAutoUpdater } = require("./updater.cjs");
 
 const rendererUrl = process.env.ELECTRON_RENDERER_URL || null;
@@ -12,6 +13,7 @@ let mainWindow = null;
 let service = null;
 let syncService = null;
 let toolsService = null;
+let downloadService = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -56,6 +58,9 @@ function registerIpcHandlers() {
     }
 
     try {
+      if (payload.command.startsWith("dl_")) {
+        return await downloadService.invoke(payload.command, payload.args || {});
+      }
       if (payload.command.startsWith("sync_")) {
         return await syncService.invoke(payload.command, payload.args || {});
       }
@@ -129,6 +134,7 @@ app.whenReady().then(() => {
   const appDataDir = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
   syncService = createSyncService({ appDataDir, mainWindow });
   toolsService = createToolsService({ appDataDir: app.getPath("userData") });
+  downloadService = createDownloadService({ appDataDir: app.getPath("userData"), mainWindow });
 
   if (!useDevServer) {
     initAutoUpdater(mainWindow);

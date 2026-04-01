@@ -18,6 +18,14 @@ contextBridge.exposeInMainWorld("htyElectron", {
   removeSyncEvent(channel, listener) {
     ipcRenderer.removeListener(channel, listener);
   },
+  onDownloadEvent(channel, callback) {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on(channel, listener);
+    return listener;
+  },
+  removeDownloadEvent(channel, listener) {
+    ipcRenderer.removeListener(channel, listener);
+  },
   getAppVersion() {
     return ipcRenderer.invoke("hty:get-app-version");
   },

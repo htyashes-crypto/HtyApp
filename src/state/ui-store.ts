@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { RouteKey } from "../lib/types";
 
-export type AppTab = "skill" | "sync" | "tasks" | "marks" | "memos" | "game";
+export type AppTab = "skill" | "sync" | "tasks" | "marks" | "memos" | "download" | "game";
 
 interface UiState {
   activeTab: AppTab;
