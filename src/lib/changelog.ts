@@ -6,6 +6,40 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: "0.6.1",
+    date: "2026-04-01",
+    changes: [
+      "\u4fee\u590d\u66f4\u65b0\u65f6\u4e0d\u663e\u793a\u66f4\u65b0\u65e5\u5fd7\u7684\u95ee\u9898",
+      "\u8865\u5145 v0.5.4\u3001v0.5.5\u3001v0.6.0 \u7684\u66f4\u65b0\u65e5\u5fd7\u8bb0\u5f55"
+    ]
+  },
+  {
+    version: "0.6.0",
+    date: "2026-04-01",
+    changes: [
+      "\u65b0\u589e\u300c\u6e38\u620f\u300dTab\uff0c\u5185\u5d4c 3D \u53f0\u7403\u7269\u7406\u6a21\u62df\u5668\uff08Billiards\uff09",
+      "\u652f\u6301\u516b\u7403\u3001\u65af\u8bfa\u514b\u3001\u4e09\u5e93\u7b49\u591a\u79cd\u73a9\u6cd5",
+      "\u771f\u5b9e\u7269\u7406\u5f15\u64ce\uff08\u65cb\u8f6c\u3001\u529b\u5ea6\u3001\u53cd\u5f39\uff09",
+      "\u5207\u6362 Tab \u81ea\u52a8\u91ca\u653e GPU \u8d44\u6e90"
+    ]
+  },
+  {
+    version: "0.5.5",
+    date: "2026-03-30",
+    changes: [
+      "\u4f18\u5316\u540c\u6b65\u6a21\u5757\u6027\u80fd\u548c\u7a33\u5b9a\u6027",
+      "\u4fee\u590d Diff \u89c6\u56fe\u663e\u793a\u95ee\u9898"
+    ]
+  },
+  {
+    version: "0.5.4",
+    date: "2026-03-29",
+    changes: [
+      "\u4fee\u590d\u591a\u4e2a UI \u7ec6\u8282\u95ee\u9898",
+      "\u4f18\u5316\u5e94\u7528\u542f\u52a8\u901f\u5ea6"
+    ]
+  },
+  {
     version: "0.5.3",
     date: "2026-03-28",
     changes: [
