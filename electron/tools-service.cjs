@@ -2,6 +2,7 @@ const { TodoStorage } = require("./tools-utils/todo-storage.cjs");
 const { BookmarkStorage } = require("./tools-utils/bookmark-storage.cjs");
 const { MemoStorage } = require("./tools-utils/memo-storage.cjs");
 
+
 function createToolsService({ appDataDir }) {
   return new ToolsService(appDataDir);
 }
@@ -11,6 +12,7 @@ class ToolsService {
     this.todo = new TodoStorage(appDataDir);
     this.bookmark = new BookmarkStorage(appDataDir);
     this.memo = new MemoStorage(appDataDir);
+
   }
 
   invoke(command, args = {}) {

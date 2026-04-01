@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:kenney.nl)",
+      "WebSearch",
+      "WebFetch(domain:opengameart.org)",
+      "WebFetch(domain:itch.io)",
+      "WebFetch(domain:www.kenney.nl)",
+      "WebFetch(domain:voxel-game.itch.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:tailuge.github.io)"
+    ]
+  }
+}

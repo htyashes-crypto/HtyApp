@@ -199,7 +199,8 @@
     "sync": "Sync",
     "tasks": "Tasks",
     "marks": "Marks",
-    "memos": "Memos"
+    "memos": "Memos",
+    "game": "Game"
   },
   "memos": {
     "title": "Memos",

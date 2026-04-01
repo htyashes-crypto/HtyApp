@@ -4973,6 +4973,33 @@ body::before {
   overflow-y: auto;
 }
 
+/* ── Game Embed ── */
+
+.game-app {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.game-app__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.game-app__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  z-index: 1;
+}
+
 .memos-header {
   display: flex;
   align-items: center;

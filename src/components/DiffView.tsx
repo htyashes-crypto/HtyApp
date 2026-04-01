@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useLayoutEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { diffLines, type Change } from "diff";
 
@@ -217,6 +217,44 @@ function ConnectorCanvas({
   );
 }
 
+/* ── Panel-scoped select-all ── */
+
+function usePanelSelectAll(
+  leftPanelRef: React.RefObject<HTMLDivElement | null>,
+  rightPanelRef: React.RefObject<HTMLDivElement | null>,
+) {
+  const activePanelRef = useRef<HTMLDivElement | null>(null);
+
+  const onPanelMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (leftPanelRef.current?.contains(target)) {
+      activePanelRef.current = leftPanelRef.current;
+    } else if (rightPanelRef.current?.contains(target)) {
+      activePanelRef.current = rightPanelRef.current;
+    } else {
+      activePanelRef.current = null;
+    }
+  }, [leftPanelRef, rightPanelRef]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a" && activePanelRef.current) {
+        e.preventDefault();
+        const sel = window.getSelection();
+        if (!sel) return;
+        const range = document.createRange();
+        range.selectNodeContents(activePanelRef.current);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  return onPanelMouseDown;
+}
+
 /* ── Main DiffView ── */
 
 export function DiffView({ left, right, leftLabel, rightLabel, leftExists, rightExists }: DiffViewProps) {
@@ -224,7 +262,10 @@ export function DiffView({ left, right, leftLabel, rightLabel, leftExists, right
   const scrollRef = useRef<HTMLDivElement>(null);
   const leftTableRef = useRef<HTMLTableElement>(null);
   const rightTableRef = useRef<HTMLTableElement>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
+  const onPanelMouseDown = usePanelSelectAll(leftPanelRef, rightPanelRef);
 
   const { rows, regions } = useMemo(() => {
     if (!leftExists && !rightExists) return { rows: [] as DiffRow[], regions: [] as ChangeRegion[] };
@@ -266,9 +307,9 @@ export function DiffView({ left, right, leftLabel, rightLabel, leftExists, right
       </div>
 
       {/* Scrollable body — single scrollbar */}
-      <div className="diff-body" ref={scrollRef}>
+      <div className="diff-body" ref={scrollRef} onMouseDown={onPanelMouseDown}>
         {/* Left table */}
-        <div className="diff-panel diff-panel--left">
+        <div className="diff-panel diff-panel--left" ref={leftPanelRef}>
           {!leftExists ? (
             <div className="diff-panel__missing">{t("diff.fileNotExist")}</div>
           ) : (
@@ -309,7 +350,7 @@ export function DiffView({ left, right, leftLabel, rightLabel, leftExists, right
         </div>
 
         {/* Right table */}
-        <div className="diff-panel diff-panel--right">
+        <div className="diff-panel diff-panel--right" ref={rightPanelRef}>
           {!rightExists ? (
             <div className="diff-panel__missing">{t("diff.fileNotExist")}</div>
           ) : (

@@ -1,4 +1,4 @@
-import { Bookmark, Boxes, FolderSync, ListChecks, StickyNote } from "lucide-react";
+import { Bookmark, Boxes, FolderSync, Gamepad2, ListChecks, StickyNote } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUiStore } from "../../state/ui-store";
 import type { AppTab } from "../../state/ui-store";
@@ -13,7 +13,8 @@ export function AppTabBar() {
     { key: "sync", label: t("appTab.sync"), icon: FolderSync },
     { key: "tasks", label: t("appTab.tasks"), icon: ListChecks },
     { key: "marks", label: t("appTab.marks"), icon: Bookmark },
-    { key: "memos", label: t("appTab.memos"), icon: StickyNote }
+    { key: "memos", label: t("appTab.memos"), icon: StickyNote },
+    { key: "game", label: t("appTab.game"), icon: Gamepad2 }
   ];
 
   return (
