@@ -12,13 +12,13 @@ use walkdir::WalkDir;
 use zip::{write::SimpleFileOptions, CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::models::{
-    ActivityRecord, AppSettings, BindRequest, DashboardSummary, ExportPackageRequest,
-    GlobalSkillDetail, GlobalSkillSummary, GlobalVersionRecord, ImportPackageRequest,
-    InstallRequest, InstallResponse, InstalledTarget, InstanceStatus, LocalIndexFile,
-    LocalInstance, PackageManifest, PackageOperationResponse, Provider,
-    ProviderVariantRecord, PublishMode, PublishRequest, PublishResponse,
-    UpdateBoundInstanceRequest, UpdateLibraryRootRequest, WorkspaceKind,
-    WorkspaceRecord, WorkspaceSnapshot,
+    ActivityRecord, AppSettings, BindRequest, DashboardSummary, DeepseekConfig,
+    ExportPackageRequest, GlobalSkillDetail, GlobalSkillSummary, GlobalVersionRecord,
+    ImportPackageRequest, InstallRequest, InstallResponse, InstalledTarget,
+    InstanceStatus, LocalIndexFile, LocalInstance, PackageManifest,
+    PackageOperationResponse, Provider, ProviderVariantRecord, PublishMode,
+    PublishRequest, PublishResponse, UpdateBoundInstanceRequest,
+    UpdateLibraryRootRequest, WorkspaceKind, WorkspaceRecord, WorkspaceSnapshot,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -1633,6 +1633,127 @@ fn copy_directory(source: &Path, target: &Path) -> Result<()> {
     }
     Ok(())
 }
+
+    pub fn deepseek_get_config(&self) -> Result<DeepseekConfig> {
+        self.load_deepseek_config()
+    }
+
+    pub fn deepseek_save_config(&self, config: DeepseekConfig) -> Result<DeepseekConfig> {
+        self.save_deepseek_config(&config)?;
+        Ok(config)
+    }
+
+    pub fn deepseek_enable(&self) -> Result<DeepseekConfig> {
+        let config = self.load_deepseek_config()?;
+        if config.api_key.is_empty() {
+            return Err(anyhow!("请先设置 API Key"));
+        }
+
+        let env_vars: Vec<(&str, String)> = vec![
+            ("ANTHROPIC_BASE_URL", config.base_url.clone()),
+            ("ANTHROPIC_AUTH_TOKEN", config.api_key.clone()),
+            ("ANTHROPIC_MODEL", config.model.clone()),
+            ("ANTHROPIC_DEFAULT_OPUS_MODEL", config.opus_model.clone()),
+            ("ANTHROPIC_DEFAULT_SONNET_MODEL", config.sonnet_model.clone()),
+            ("ANTHROPIC_DEFAULT_HAIKU_MODEL", config.haiku_model.clone()),
+            ("CLAUDE_CODE_SUBAGENT_MODEL", config.subagent_model.clone()),
+            ("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1".to_string()),
+            ("CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1".to_string()),
+            ("CLAUDE_CODE_EFFORT_LEVEL", "max".to_string()),
+        ];
+
+        for (name, value) in &env_vars {
+            self.set_user_env_var(name, value)?;
+        }
+
+        let mut new_config = config;
+        new_config.enabled = true;
+        self.save_deepseek_config(&new_config)?;
+        Ok(new_config)
+    }
+
+    pub fn deepseek_disable(&self) -> Result<DeepseekConfig> {
+        let env_names = [
+            "ANTHROPIC_BASE_URL",
+            "ANTHROPIC_AUTH_TOKEN",
+            "ANTHROPIC_MODEL",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "CLAUDE_CODE_SUBAGENT_MODEL",
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK",
+            "CLAUDE_CODE_EFFORT_LEVEL",
+        ];
+
+        for name in &env_names {
+            self.delete_user_env_var(name)?;
+        }
+
+        let mut config = self.load_deepseek_config()?;
+        config.enabled = false;
+        self.save_deepseek_config(&config)?;
+        Ok(config)
+    }
+
+    fn deepseek_config_path(&self) -> PathBuf {
+        self.default_base_dir.join("deepseek-config.json")
+    }
+
+    fn load_deepseek_config(&self) -> Result<DeepseekConfig> {
+        let config_path = self.deepseek_config_path();
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)?;
+            Ok(serde_json::from_str(&content).unwrap_or_default())
+        } else {
+            Ok(DeepseekConfig::default())
+        }
+    }
+
+    fn save_deepseek_config(&self, config: &DeepseekConfig) -> Result<()> {
+        let config_path = self.deepseek_config_path();
+        fs::write(&config_path, serde_json::to_string_pretty(config)?)?;
+        Ok(())
+    }
+
+    fn set_user_env_var(&self, name: &str, value: &str) -> Result<()> {
+        use std::process::Command;
+        let escaped = value.replace('"', "\\\"");
+        let ps_cmd = format!(
+            "[Environment]::SetEnvironmentVariable('{}', '{}', 'User')",
+            name, escaped
+        );
+        let output = Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps_cmd])
+            .output()?;
+        if !output.status.success() {
+            return Err(anyhow!(
+                "failed to set env var {}: {}",
+                name,
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        Ok(())
+    }
+
+    fn delete_user_env_var(&self, name: &str) -> Result<()> {
+        use std::process::Command;
+        let ps_cmd = format!(
+            "[Environment]::SetEnvironmentVariable('{}', $null, 'User')",
+            name
+        );
+        let output = Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps_cmd])
+            .output()?;
+        if !output.status.success() {
+            return Err(anyhow!(
+                "failed to delete env var {}: {}",
+                name,
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        Ok(())
+    }
 
 #[cfg(test)]
 mod tests {

@@ -23,7 +23,11 @@ pub fn run() {
             commands::list_activity,
             commands::create_backup,
             commands::export_package,
-            commands::import_package
+            commands::import_package,
+            commands::deepseek_get_config,
+            commands::deepseek_save_config,
+            commands::deepseek_enable,
+            commands::deepseek_disable
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri application");

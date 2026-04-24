@@ -1,4 +1,4 @@
-import { Bookmark, Boxes, Download, FolderSync, Gamepad2, ListChecks, StickyNote } from "lucide-react";
+import { Bookmark, Boxes, Cpu, Download, FolderSync, Gamepad2, ListChecks, StickyNote } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUiStore } from "../../state/ui-store";
 import type { AppTab } from "../../state/ui-store";
@@ -15,7 +15,8 @@ export function AppTabBar() {
     { key: "marks", label: t("appTab.marks"), icon: Bookmark },
     { key: "memos", label: t("appTab.memos"), icon: StickyNote },
     { key: "download", label: t("appTab.download"), icon: Download },
-    { key: "game", label: t("appTab.game"), icon: Gamepad2 }
+    { key: "game", label: t("appTab.game"), icon: Gamepad2 },
+    { key: "deepseek", label: t("appTab.deepseek"), icon: Cpu }
   ];
 
   return (

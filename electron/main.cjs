@@ -5,6 +5,7 @@ const { createDesktopService } = require("./service.cjs");
 const { createSyncService } = require("./sync-service.cjs");
 const { createToolsService } = require("./tools-service.cjs");
 const { createDownloadService } = require("./download-service.cjs");
+const { createDeepseekService } = require("./deepseek-service.cjs");
 const { initAutoUpdater } = require("./updater.cjs");
 
 const rendererUrl = process.env.ELECTRON_RENDERER_URL || null;
@@ -14,6 +15,7 @@ let service = null;
 let syncService = null;
 let toolsService = null;
 let downloadService = null;
+let deepseekService = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -66,6 +68,9 @@ function registerIpcHandlers() {
       }
       if (payload.command.startsWith("tasks_") || payload.command.startsWith("marks_") || payload.command.startsWith("memos_")) {
         return await toolsService.invoke(payload.command, payload.args || {});
+      }
+      if (payload.command.startsWith("deepseek_")) {
+        return await deepseekService.invoke(payload.command, payload.args || {});
       }
 
       return await service.invoke(payload.command, payload.args || {});
@@ -135,6 +140,7 @@ app.whenReady().then(() => {
   syncService = createSyncService({ appDataDir, mainWindow });
   toolsService = createToolsService({ appDataDir: app.getPath("userData") });
   downloadService = createDownloadService({ appDataDir: app.getPath("userData"), mainWindow });
+  deepseekService = createDeepseekService({ appDataDir: app.getPath("userData") });
 
   if (!useDevServer) {
     initAutoUpdater(mainWindow);

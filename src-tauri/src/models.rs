@@ -288,3 +288,31 @@ pub struct PackageManifest {
     pub published_from_workspace_id: Option<String>,
     pub variants: Vec<ProviderVariantRecord>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeepseekConfig {
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default = "default_deepseek_base_url")]
+    pub base_url: String,
+    #[serde(default = "default_deepseek_model")]
+    pub model: String,
+    #[serde(default = "default_deepseek_opus")]
+    pub opus_model: String,
+    #[serde(default = "default_deepseek_sonnet")]
+    pub sonnet_model: String,
+    #[serde(default = "default_deepseek_haiku")]
+    pub haiku_model: String,
+    #[serde(default = "default_deepseek_subagent")]
+    pub subagent_model: String,
+    #[serde(default)]
+    pub enabled: bool,
+}
+
+fn default_deepseek_base_url() -> String { "https://api.deepseek.com/anthropic".into() }
+fn default_deepseek_model() -> String { "deepseek-v4-pro[1m]".into() }
+fn default_deepseek_opus() -> String { "deepseek-v4-pro".into() }
+fn default_deepseek_sonnet() -> String { "deepseek-v4-pro".into() }
+fn default_deepseek_haiku() -> String { "deepseek-v4-flash".into() }
+fn default_deepseek_subagent() -> String { "deepseek-v4-pro".into() }

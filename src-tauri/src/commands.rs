@@ -1,9 +1,9 @@
 use tauri::AppHandle;
 
 use crate::models::{
-    ActivityRecord, AppSettings, BindRequest, DashboardSummary, ExportPackageRequest,
-    GlobalSkillDetail, GlobalSkillSummary, ImportPackageRequest, InstallRequest,
-    InstallResponse, LocalInstance, PackageOperationResponse, PublishRequest,
+    ActivityRecord, AppSettings, BindRequest, DashboardSummary, DeepseekConfig,
+    ExportPackageRequest, GlobalSkillDetail, GlobalSkillSummary, ImportPackageRequest,
+    InstallRequest, InstallResponse, LocalInstance, PackageOperationResponse, PublishRequest,
     PublishResponse, UpdateBoundInstanceRequest, UpdateLibraryRootRequest,
     WorkspaceRecord, WorkspaceSnapshot,
 };
@@ -115,4 +115,27 @@ pub fn import_package(
     request: ImportPackageRequest,
 ) -> Result<PackageOperationResponse, String> {
     with_service(&app, |service| service.import_package(request))
+}
+
+#[tauri::command]
+pub fn deepseek_get_config(app: AppHandle) -> Result<DeepseekConfig, String> {
+    with_service(&app, |service| service.deepseek_get_config())
+}
+
+#[tauri::command]
+pub fn deepseek_save_config(
+    app: AppHandle,
+    config: DeepseekConfig,
+) -> Result<DeepseekConfig, String> {
+    with_service(&app, |service| service.deepseek_save_config(config))
+}
+
+#[tauri::command]
+pub fn deepseek_enable(app: AppHandle) -> Result<DeepseekConfig, String> {
+    with_service(&app, |service| service.deepseek_enable())
+}
+
+#[tauri::command]
+pub fn deepseek_disable(app: AppHandle) -> Result<DeepseekConfig, String> {
+    with_service(&app, |service| service.deepseek_disable())
 }
