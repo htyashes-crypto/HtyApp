@@ -17,22 +17,51 @@ const ENV_VARS = [
   { name: "CLAUDE_CODE_EFFORT_LEVEL", default: "max" }
 ];
 
-function setEnvVar(name, value) {
-  if (process.platform === "win32") {
-    const escapedValue = value.replace(/"/g, '\\"');
-    execSync(
-      `powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('${name}', '${escapedValue}', 'User')"`,
-      { windowsHide: true }
-    );
-  }
+function escapePS(arg) {
+  return arg.replace(/'/g, "''");
 }
 
-function deleteEnvVar(name) {
-  if (process.platform === "win32") {
-    execSync(
-      `powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('${name}', $null, 'User')"`,
-      { windowsHide: true }
+function buildSetCommands(vars) {
+  return vars.map(([n, v]) =>
+    `[Environment]::SetEnvironmentVariable('${escapePS(n)}', '${escapePS(v)}', 'User')`
+  ).join("; ");
+}
+
+function runPSScript(script) {
+  if (process.platform !== "win32") return "";
+  const stdout = execSync(
+    `powershell -NoProfile -Command "${script}"`,
+    { windowsHide: true, timeout: 30000 }
+  );
+  return stdout.toString("utf-8");
+}
+
+function buildRestoreCommands(names, previousEnv) {
+  return names.map(n => {
+    const escapedName = escapePS(n);
+    if (Object.prototype.hasOwnProperty.call(previousEnv, n)) {
+      return `[Environment]::SetEnvironmentVariable('${escapedName}', '${escapePS(previousEnv[n])}', 'User')`;
+    }
+    return `[Environment]::SetEnvironmentVariable('${escapedName}', $null, 'User')`;
+  }).join("; ");
+}
+
+function readUserEnvVars(names) {
+  if (process.platform !== "win32") return {};
+  const parts = ["$result = @{}"];
+  for (const name of names) {
+    const n = escapePS(name);
+    parts.push(
+      `$v = [Environment]::GetEnvironmentVariable('${n}', 'User'); if ($null -ne $v) { $result['${n}'] = $v }`
     );
+  }
+  parts.push("$result | ConvertTo-Json -Compress");
+  const stdout = runPSScript(parts.join("; ")).trim();
+  if (!stdout || stdout === "null") return {};
+  try {
+    return JSON.parse(stdout);
+  } catch {
+    return {};
   }
 }
 
@@ -61,7 +90,8 @@ class DeepseekService {
       sonnetModel: "deepseek-v4-pro",
       haikuModel: "deepseek-v4-flash",
       subagentModel: "deepseek-v4-pro",
-      enabled: false
+      enabled: false,
+      previousEnv: {}
     };
   }
 
@@ -97,22 +127,26 @@ class DeepseekService {
       throw new Error("请先设置 API Key");
     }
 
-    const values = {
-      ANTHROPIC_BASE_URL: config.baseUrl || "https://api.deepseek.com/anthropic",
-      ANTHROPIC_AUTH_TOKEN: config.apiKey,
-      ANTHROPIC_MODEL: config.model || "deepseek-v4-pro[1m]",
-      ANTHROPIC_DEFAULT_OPUS_MODEL: config.opusModel || "deepseek-v4-pro",
-      ANTHROPIC_DEFAULT_SONNET_MODEL: config.sonnetModel || "deepseek-v4-pro",
-      ANTHROPIC_DEFAULT_HAIKU_MODEL: config.haikuModel || "deepseek-v4-flash",
-      CLAUDE_CODE_SUBAGENT_MODEL: config.subagentModel || "deepseek-v4-pro",
-      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
-      CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK: "1",
-      CLAUDE_CODE_EFFORT_LEVEL: "max"
-    };
+    const names = ENV_VARS.map(e => e.name);
 
-    for (const [name, value] of Object.entries(values)) {
-      setEnvVar(name, value);
+    if (!config.enabled) {
+      config.previousEnv = readUserEnvVars(names);
     }
+
+    const vars = [
+      ["ANTHROPIC_BASE_URL", config.baseUrl || "https://api.deepseek.com/anthropic"],
+      ["ANTHROPIC_AUTH_TOKEN", config.apiKey],
+      ["ANTHROPIC_MODEL", config.model || "deepseek-v4-pro[1m]"],
+      ["ANTHROPIC_DEFAULT_OPUS_MODEL", config.opusModel || "deepseek-v4-pro"],
+      ["ANTHROPIC_DEFAULT_SONNET_MODEL", config.sonnetModel || "deepseek-v4-pro"],
+      ["ANTHROPIC_DEFAULT_HAIKU_MODEL", config.haikuModel || "deepseek-v4-flash"],
+      ["CLAUDE_CODE_SUBAGENT_MODEL", config.subagentModel || "deepseek-v4-pro"],
+      ["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1"],
+      ["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1"],
+      ["CLAUDE_CODE_EFFORT_LEVEL", "max"]
+    ];
+
+    runPSScript(buildSetCommands(vars));
 
     config.enabled = true;
     this.saveConfigFile(config);
@@ -120,11 +154,13 @@ class DeepseekService {
   }
 
   disable() {
-    for (const env of ENV_VARS) {
-      deleteEnvVar(env.name);
-    }
-
+    const names = ENV_VARS.map(e => e.name);
     const config = this.loadConfig();
+    const previousEnv = config.previousEnv || {};
+
+    runPSScript(buildRestoreCommands(names, previousEnv));
+
+    config.previousEnv = {};
     config.enabled = false;
     this.saveConfigFile(config);
     return { enabled: false };

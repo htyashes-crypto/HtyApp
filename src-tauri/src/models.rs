@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
@@ -289,7 +290,7 @@ pub struct PackageManifest {
     pub variants: Vec<ProviderVariantRecord>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct DeepseekConfig {
     #[serde(default)]
@@ -308,6 +309,8 @@ pub struct DeepseekConfig {
     pub subagent_model: String,
     #[serde(default)]
     pub enabled: bool,
+    #[serde(default)]
+    pub previous_env: HashMap<String, String>,
 }
 
 fn default_deepseek_base_url() -> String { "https://api.deepseek.com/anthropic".into() }
