@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("../tools-utils/atomic-json.cjs");
 
 class ProjectStorage {
   constructor(appDataDir) {
@@ -10,9 +11,7 @@ class ProjectStorage {
 
   load() {
     try {
-      if (!fs.existsSync(this.filePath)) return { Version: 2, Repositories: [] };
-      const json = fs.readFileSync(this.filePath, "utf-8");
-      const raw = JSON.parse(json);
+      const raw = readJsonWithBackup(this.filePath);
       if (!raw) return { Version: 2, Repositories: [] };
 
       // Auto-migrate V1 format
@@ -30,7 +29,7 @@ class ProjectStorage {
 
   save(data) {
     fs.mkdirSync(this.dir, { recursive: true });
-    fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2), "utf-8");
+    writeAtomicWithBackup(this.filePath, JSON.stringify(data, null, 2));
   }
 
   _migrate(oldData) {

@@ -1,96 +1,169 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const {
+  writeAtomic,
+  writeAtomicWithBackup,
+  readJsonSafe,
+  readJsonWithBackup
+} = require("./atomic-json.cjs");
 
 const NORMAL_SEQUENCE = ["not_started", "in_progress", "testing", "completed"];
 const REWORK_SEQUENCE = ["rework", "in_progress", "testing", "completed"];
 
+// 存储布局（v3）：
+//   <baseDir>/tools-todo/
+//     meta.json            — 分组与版本信息（带 .bak 备份）
+//     items/<uuid>.json    — 每条任务单独一个文件
+// 单条断电只损失一条，且分组结构永远独立保护。
 class TodoStorage {
   constructor(baseDir) {
-    this.filePath = path.join(baseDir, "tools-todo.json");
+    this.legacyPath = path.join(baseDir, "tools-todo.json");
+    this.dir = path.join(baseDir, "tools-todo");
+    this.itemsDir = path.join(this.dir, "items");
+    this.metaPath = path.join(this.dir, "meta.json");
+    this._ensureInitialized();
   }
 
-  load() {
-    if (!fs.existsSync(this.filePath)) {
-      return {
-        version: 2,
-        groups: [{ id: "default", name: "默认", createdAt: new Date().toISOString() }],
-        items: []
-      };
+  _ensureInitialized() {
+    fs.mkdirSync(this.itemsDir, { recursive: true });
+    if (fs.existsSync(this.metaPath)) return;
+
+    const legacy = readJsonSafe(this.legacyPath);
+
+    // legacy v2: { version, groups, items }
+    if (legacy && Array.isArray(legacy.groups) && Array.isArray(legacy.items)) {
+      for (const item of legacy.items) {
+        if (item && item.id) {
+          writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+        }
+      }
+      writeAtomicWithBackup(this.metaPath, JSON.stringify({
+        version: 3,
+        groups: legacy.groups
+      }, null, 2));
+      try { fs.renameSync(this.legacyPath, this.legacyPath + ".migrated"); } catch {}
+      return;
     }
-    const data = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
-    if (data.version === 1) {
-      return this._migrate_v1_to_v2(data);
+
+    // legacy v1: { items: [{ status: "done"|... }] } — 无 groups
+    if (legacy && Array.isArray(legacy.items)) {
+      const now = new Date().toISOString();
+      const groups = [{ id: "default", name: "默认", createdAt: now }];
+      for (const raw of legacy.items) {
+        if (!raw || !raw.id) continue;
+        const item = {
+          ...raw,
+          status: raw.status === "done" ? "completed" : "not_started",
+          groupId: "default",
+          hasReworked: false
+        };
+        writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+      }
+      writeAtomicWithBackup(this.metaPath, JSON.stringify({ version: 3, groups }, null, 2));
+      try { fs.renameSync(this.legacyPath, this.legacyPath + ".migrated"); } catch {}
+      return;
     }
-    return data;
+
+    // 无可用旧数据 / 旧文件已损坏：用默认分组初始化
+    writeAtomicWithBackup(this.metaPath, JSON.stringify({
+      version: 3,
+      groups: [{ id: "default", name: "默认", createdAt: new Date().toISOString() }]
+    }, null, 2));
   }
 
-  _migrate_v1_to_v2(data) {
-    const now = new Date().toISOString();
-    const migrated = {
-      version: 2,
-      groups: [{ id: "default", name: "默认", createdAt: now }],
-      items: (data.items || []).map((item) => ({
-        ...item,
-        status: item.status === "done" ? "completed" : "not_started",
-        groupId: "default",
-        hasReworked: false
-      }))
+  _itemPath(id) {
+    return path.join(this.itemsDir, `${id}.json`);
+  }
+
+  _loadMeta() {
+    const meta = readJsonWithBackup(this.metaPath);
+    if (meta && Array.isArray(meta.groups)) return meta;
+    return {
+      version: 3,
+      groups: [{ id: "default", name: "默认", createdAt: new Date().toISOString() }]
     };
-    this.save(migrated);
-    return migrated;
   }
 
-  save(data) {
-    fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2), "utf8");
+  _saveMeta(meta) {
+    writeAtomicWithBackup(this.metaPath, JSON.stringify(meta, null, 2));
+  }
+
+  _loadItem(id) {
+    return readJsonSafe(this._itemPath(id));
+  }
+
+  _saveItem(item) {
+    writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+  }
+
+  _listAllItems() {
+    if (!fs.existsSync(this.itemsDir)) return [];
+    let files;
+    try { files = fs.readdirSync(this.itemsDir); } catch { return []; }
+    const items = [];
+    for (const f of files) {
+      if (!f.endsWith(".json")) continue;
+      const id = f.slice(0, -5);
+      const item = this._loadItem(id);
+      if (item && item.id) items.push(item);
+    }
+    return items;
   }
 
   // ── Group methods ──
 
   listGroups() {
-    return this.load().groups;
+    return this._loadMeta().groups;
   }
 
   createGroup({ name }) {
-    const data = this.load();
+    const meta = this._loadMeta();
     const group = {
       id: randomUUID(),
       name: name || "",
       createdAt: new Date().toISOString()
     };
-    data.groups.push(group);
-    this.save(data);
+    meta.groups.push(group);
+    this._saveMeta(meta);
     return group;
   }
 
   renameGroup({ groupId, name }) {
-    const data = this.load();
-    const group = data.groups.find((g) => g.id === groupId);
+    const meta = this._loadMeta();
+    const group = meta.groups.find((g) => g.id === groupId);
     if (!group) throw new Error(`group not found: ${groupId}`);
     if (groupId === "default") throw new Error("cannot rename default group");
     group.name = name;
-    this.save(data);
+    this._saveMeta(meta);
     return group;
   }
 
   deleteGroup({ groupId }) {
     if (groupId === "default") throw new Error("cannot delete default group");
-    const data = this.load();
-    data.groups = data.groups.filter((g) => g.id !== groupId);
-    data.items = data.items.filter((i) => i.groupId !== groupId);
-    this.save(data);
+    const meta = this._loadMeta();
+    meta.groups = meta.groups.filter((g) => g.id !== groupId);
+    // 删该组下所有 task 文件（保持原有语义：连同任务一起删除）
+    const items = this._listAllItems();
+    for (const item of items) {
+      if (item.groupId === groupId) {
+        try { fs.unlinkSync(this._itemPath(item.id)); } catch {}
+      }
+    }
+    this._saveMeta(meta);
   }
 
   // ── Task methods ──
 
   list({ groupId } = {}) {
-    const items = this.load().items;
-    if (groupId) return items.filter((i) => i.groupId === groupId);
+    let items = this._listAllItems();
+    if (groupId) items = items.filter((i) => i.groupId === groupId);
+    // 保持原"最新创建在前"的顺序（旧实现用 unshift 实现）
+    items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
     return items;
   }
 
   create({ title, description, priority, groupId }) {
-    const data = this.load();
     const item = {
       id: randomUUID(),
       title: title || "",
@@ -102,72 +175,71 @@ class TodoStorage {
       createdAt: new Date().toISOString(),
       completedAt: null
     };
-    data.items.unshift(item);
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   update({ id, title, description, priority }) {
-    const data = this.load();
-    const item = data.items.find((i) => i.id === id);
+    const item = this._loadItem(id);
     if (!item) throw new Error(`task not found: ${id}`);
     if (title !== undefined) item.title = title;
     if (description !== undefined) item.description = description;
     if (priority !== undefined) item.priority = priority;
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   advance({ id }) {
-    const data = this.load();
-    const item = data.items.find((i) => i.id === id);
+    const item = this._loadItem(id);
     if (!item) throw new Error(`task not found: ${id}`);
     const seq = item.status === "rework" ? REWORK_SEQUENCE : NORMAL_SEQUENCE;
     const idx = seq.indexOf(item.status);
     if (idx === -1 || idx >= seq.length - 1) throw new Error(`cannot advance from: ${item.status}`);
     item.status = seq[idx + 1];
     item.completedAt = item.status === "completed" ? new Date().toISOString() : null;
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   rollback({ id }) {
-    const data = this.load();
-    const item = data.items.find((i) => i.id === id);
+    const item = this._loadItem(id);
     if (!item) throw new Error(`task not found: ${id}`);
     const seq = item.hasReworked ? REWORK_SEQUENCE : NORMAL_SEQUENCE;
     const idx = seq.indexOf(item.status);
     if (idx <= 0) throw new Error(`cannot rollback from: ${item.status}`);
     item.status = seq[idx - 1];
     item.completedAt = null;
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   rework({ id }) {
-    const data = this.load();
-    const item = data.items.find((i) => i.id === id);
+    const item = this._loadItem(id);
     if (!item) throw new Error(`task not found: ${id}`);
     if (item.status !== "completed") throw new Error(`can only rework completed tasks`);
     item.status = "rework";
     item.hasReworked = true;
     item.completedAt = null;
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   delete(id) {
-    const data = this.load();
-    data.items = data.items.filter((i) => i.id !== id);
-    this.save(data);
+    const fp = this._itemPath(id);
+    if (fs.existsSync(fp)) {
+      try { fs.unlinkSync(fp); } catch {}
+    }
   }
 
   clearCompleted() {
-    const data = this.load();
-    const before = data.items.length;
-    data.items = data.items.filter((i) => i.status !== "completed");
-    this.save(data);
-    return before - data.items.length;
+    const items = this._listAllItems();
+    let removed = 0;
+    for (const item of items) {
+      if (item.status === "completed") {
+        try { fs.unlinkSync(this._itemPath(item.id)); removed++; } catch {}
+      }
+    }
+    return removed;
   }
 }
 

@@ -1,6 +1,7 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const { execSync } = require("node:child_process");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("./tools-utils/atomic-json.cjs");
 
 const CONFIG_FILE = "deepseek-config.json";
 
@@ -76,9 +77,8 @@ class DeepseekService {
 
   loadConfig() {
     try {
-      if (fs.existsSync(this.configPath)) {
-        return JSON.parse(fs.readFileSync(this.configPath, "utf-8"));
-      }
+      const data = readJsonWithBackup(this.configPath);
+      if (data) return data;
     } catch (err) {
       console.error("[DeepseekService] Failed to load config:", err);
     }
@@ -97,7 +97,7 @@ class DeepseekService {
 
   saveConfigFile(config) {
     try {
-      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), "utf-8");
+      writeAtomicWithBackup(this.configPath, JSON.stringify(config, null, 2));
     } catch (err) {
       console.error("[DeepseekService] Failed to save config:", err);
       throw err;

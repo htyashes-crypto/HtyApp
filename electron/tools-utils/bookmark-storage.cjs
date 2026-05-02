@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("./atomic-json.cjs");
 
 class BookmarkStorage {
   constructor(baseDir) {
@@ -16,10 +17,10 @@ class BookmarkStorage {
 
   load(workspaceId) {
     const fp = this._filePath(workspaceId);
-    if (!fs.existsSync(fp)) {
+    if (!fs.existsSync(fp) && !fs.existsSync(fp + ".bak")) {
       return { version: 2, workspaceId, workspaceRoot: "", groups: [] };
     }
-    const data = JSON.parse(fs.readFileSync(fp, "utf8"));
+    const data = readJsonWithBackup(fp) || { version: 2, workspaceId, workspaceRoot: "", groups: [] };
     // Migrate v1 (flat items) to v2 (groups)
     if (data.version === 1 && data.items) {
       data.version = 2;
@@ -41,7 +42,7 @@ class BookmarkStorage {
   }
 
   save(workspaceId, data) {
-    fs.writeFileSync(this._filePath(workspaceId), JSON.stringify(data, null, 2), "utf8");
+    writeAtomicWithBackup(this._filePath(workspaceId), JSON.stringify(data, null, 2));
   }
 
   listGroups(workspaceId) {

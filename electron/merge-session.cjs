@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("./tools-utils/atomic-json.cjs");
 
 function prepareMergeSession({
   sessionsRoot,
@@ -125,15 +126,14 @@ function discardMergeSession(sessionsRoot, sessionId) {
 function readMergeSessionState(sessionsRoot, sessionId) {
   const sessionDir = path.join(sessionsRoot, sessionId);
   const paths = sessionPaths(sessionDir);
-  if (!fs.existsSync(paths.metaPath)) {
+  if (!fs.existsSync(paths.metaPath) && !fs.existsSync(paths.metaPath + ".bak")) {
     throw new Error(`merge session not found: ${sessionId}`);
   }
-
-  return {
-    sessionDir,
-    paths,
-    meta: JSON.parse(fs.readFileSync(paths.metaPath, "utf8"))
-  };
+  const meta = readJsonWithBackup(paths.metaPath);
+  if (!meta) {
+    throw new Error(`merge session meta unreadable: ${sessionId}`);
+  }
+  return { sessionDir, paths, meta };
 }
 
 function sessionPaths(sessionDir) {
@@ -634,7 +634,7 @@ function normalizePath(targetPath) {
 
 function writeMeta(metaPath, meta) {
   ensureDir(path.dirname(metaPath));
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), "utf8");
+  writeAtomicWithBackup(metaPath, JSON.stringify(meta, null, 2));
 }
 
 function nowIso() {

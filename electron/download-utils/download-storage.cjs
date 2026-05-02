@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("../tools-utils/atomic-json.cjs");
 
 class DownloadStorage {
   constructor(baseDir) {
@@ -8,20 +9,17 @@ class DownloadStorage {
   }
 
   load() {
-    if (!fs.existsSync(this.filePath)) {
-      return {
-        version: 1,
-        items: [],
-        settings: this._defaultSettings()
-      };
-    }
-    return JSON.parse(fs.readFileSync(this.filePath, "utf8"));
+    const data = readJsonWithBackup(this.filePath);
+    if (data) return data;
+    return {
+      version: 1,
+      items: [],
+      settings: this._defaultSettings()
+    };
   }
 
   save(data) {
-    const tmp = this.filePath + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
-    fs.renameSync(tmp, this.filePath);
+    writeAtomicWithBackup(this.filePath, JSON.stringify(data, null, 2));
   }
 
   _defaultSettings() {

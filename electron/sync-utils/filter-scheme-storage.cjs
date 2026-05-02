@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { writeAtomicWithBackup, readJsonWithBackup } = require("../tools-utils/atomic-json.cjs");
 
 class FilterSchemeStorage {
   constructor(appDataDir) {
@@ -8,8 +9,7 @@ class FilterSchemeStorage {
 
   load() {
     try {
-      if (!fs.existsSync(this.filePath)) return [];
-      return JSON.parse(fs.readFileSync(this.filePath, "utf-8")) || [];
+      return readJsonWithBackup(this.filePath) || [];
     } catch {
       return [];
     }
@@ -17,7 +17,7 @@ class FilterSchemeStorage {
 
   save(schemes) {
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-    fs.writeFileSync(this.filePath, JSON.stringify(schemes || [], null, 2), "utf-8");
+    writeAtomicWithBackup(this.filePath, JSON.stringify(schemes || [], null, 2));
   }
 }
 

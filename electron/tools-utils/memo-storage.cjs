@@ -1,6 +1,12 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
+const {
+  writeAtomic,
+  writeAtomicWithBackup,
+  readJsonSafe,
+  readJsonWithBackup
+} = require("./atomic-json.cjs");
 
 const DEFAULT_GROUPS = [
   { id: "memo_group_p0", name: "P0", color: "#f87171" },
@@ -20,97 +26,168 @@ const PRIORITY_TO_GROUP = {
   P5: "memo_group_p5"
 };
 
+// 存储布局（v3）：
+//   <baseDir>/tools-memos/
+//     meta.json            — 分组与版本信息（带 .bak 备份）
+//     items/<uuid>.json    — 每条备忘单独一个文件
+// 单点失败只影响一条记录，不会再出现"全部丢失"。
 class MemoStorage {
   constructor(baseDir) {
-    this.filePath = path.join(baseDir, "tools-memos.json");
+    this.legacyPath = path.join(baseDir, "tools-memos.json"); // v1/v2 单文件
+    this.dir = path.join(baseDir, "tools-memos");
+    this.itemsDir = path.join(this.dir, "items");
+    this.metaPath = path.join(this.dir, "meta.json");
+    this._ensureInitialized();
   }
 
-  load() {
-    if (!fs.existsSync(this.filePath)) {
+  _ensureInitialized() {
+    fs.mkdirSync(this.itemsDir, { recursive: true });
+    if (fs.existsSync(this.metaPath)) return;
+
+    // 第一次启动新格式：尝试从旧的单文件迁移
+    const legacy = readJsonSafe(this.legacyPath);
+    if (legacy && Array.isArray(legacy.groups) && Array.isArray(legacy.items)) {
+      for (const item of legacy.items) {
+        if (item && item.id) {
+          writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+        }
+      }
+      writeAtomicWithBackup(this.metaPath, JSON.stringify({
+        version: 3,
+        groups: legacy.groups
+      }, null, 2));
+      try { fs.renameSync(this.legacyPath, this.legacyPath + ".migrated"); } catch {}
+      return;
+    }
+
+    // legacy 是 v1（无 groups），按优先级映射后迁移
+    if (legacy && Array.isArray(legacy.items) && legacy.version === 1) {
       const now = new Date().toISOString();
-      return {
-        version: 2,
-        groups: DEFAULT_GROUPS.map((g) => ({ ...g, createdAt: now })),
-        items: []
-      };
+      const groups = DEFAULT_GROUPS.map((g) => ({ ...g, createdAt: now }));
+      for (const raw of legacy.items) {
+        if (!raw || !raw.id) continue;
+        const groupId = PRIORITY_TO_GROUP[raw.priority] || "memo_group_p3";
+        const { priority, ...rest } = raw;
+        const item = { ...rest, groupId };
+        writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+      }
+      writeAtomicWithBackup(this.metaPath, JSON.stringify({ version: 3, groups }, null, 2));
+      try { fs.renameSync(this.legacyPath, this.legacyPath + ".migrated"); } catch {}
+      return;
     }
-    const data = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
-    if (data.version === 1) {
-      return this.migrateV1ToV2(data);
-    }
-    return data;
-  }
 
-  migrateV1ToV2(v1Data) {
+    // 没有可用旧数据（包括旧文件已损坏的情况）→ 用默认分组初始化
     const now = new Date().toISOString();
-    const groups = DEFAULT_GROUPS.map((g) => ({ ...g, createdAt: now }));
-    const items = (v1Data.items || []).map((item) => {
-      const groupId = PRIORITY_TO_GROUP[item.priority] || "memo_group_p3";
-      const { priority, ...rest } = item;
-      return { ...rest, groupId };
-    });
-    const v2Data = { version: 2, groups, items };
-    this.save(v2Data);
-    return v2Data;
+    writeAtomicWithBackup(this.metaPath, JSON.stringify({
+      version: 3,
+      groups: DEFAULT_GROUPS.map((g) => ({ ...g, createdAt: now }))
+    }, null, 2));
   }
 
-  save(data) {
-    fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2), "utf8");
+  _itemPath(id) {
+    return path.join(this.itemsDir, `${id}.json`);
+  }
+
+  _loadMeta() {
+    const meta = readJsonWithBackup(this.metaPath);
+    if (meta && Array.isArray(meta.groups)) return meta;
+    // 极端情况：主文件 + .bak 都没了。返回内存默认值，但**不立即回写**，
+    // 避免在没有任何用户改动的 list() 之后就把 .bak 也覆盖掉。
+    const now = new Date().toISOString();
+    return {
+      version: 3,
+      groups: DEFAULT_GROUPS.map((g) => ({ ...g, createdAt: now }))
+    };
+  }
+
+  _saveMeta(meta) {
+    writeAtomicWithBackup(this.metaPath, JSON.stringify(meta, null, 2));
+  }
+
+  _loadItem(id) {
+    return readJsonSafe(this._itemPath(id));
+  }
+
+  _saveItem(item) {
+    writeAtomic(this._itemPath(item.id), JSON.stringify(item, null, 2));
+  }
+
+  _listAllItems() {
+    if (!fs.existsSync(this.itemsDir)) return [];
+    let files;
+    try {
+      files = fs.readdirSync(this.itemsDir);
+    } catch {
+      return [];
+    }
+    const items = [];
+    for (const f of files) {
+      if (!f.endsWith(".json")) continue; // 跳过 .tmp 等
+      const id = f.slice(0, -5);
+      const item = this._loadItem(id);
+      if (item && item.id) items.push(item);
+      // 单条损坏不影响其他条目，静默跳过
+    }
+    return items;
   }
 
   // ── Groups ──
 
   listGroups() {
-    return this.load().groups;
+    return this._loadMeta().groups;
   }
 
   createGroup({ name, color }) {
-    const data = this.load();
+    const meta = this._loadMeta();
     const now = new Date().toISOString();
     const group = { id: `memo_group_${randomUUID().slice(0, 8)}`, name, color, createdAt: now };
-    data.groups.push(group);
-    this.save(data);
+    meta.groups.push(group);
+    this._saveMeta(meta);
     return group;
   }
 
   renameGroup({ groupId, name, color }) {
-    const data = this.load();
-    const group = data.groups.find((g) => g.id === groupId);
+    const meta = this._loadMeta();
+    const group = meta.groups.find((g) => g.id === groupId);
     if (!group) throw new Error(`group not found: ${groupId}`);
     if (name !== undefined) group.name = name;
     if (color !== undefined) group.color = color;
-    this.save(data);
+    this._saveMeta(meta);
     return group;
   }
 
   deleteGroup({ groupId }) {
-    const data = this.load();
-    data.groups = data.groups.filter((g) => g.id !== groupId);
-    // Move orphaned memos to first remaining group or remove groupId
-    const fallbackId = data.groups.length > 0 ? data.groups[0].id : "";
-    for (const item of data.items) {
-      if (item.groupId === groupId) item.groupId = fallbackId;
+    const meta = this._loadMeta();
+    meta.groups = meta.groups.filter((g) => g.id !== groupId);
+    const fallbackId = meta.groups.length > 0 ? meta.groups[0].id : "";
+    const items = this._listAllItems();
+    for (const item of items) {
+      if (item.groupId === groupId) {
+        item.groupId = fallbackId;
+        this._saveItem(item);
+      }
     }
-    this.save(data);
+    this._saveMeta(meta);
   }
 
   // ── Items ──
 
   list() {
-    const data = this.load();
-    const groupOrder = new Map(data.groups.map((g, i) => [g.id, i]));
-    return data.items.slice().sort((a, b) => {
+    const meta = this._loadMeta();
+    const items = this._listAllItems();
+    const groupOrder = new Map(meta.groups.map((g, i) => [g.id, i]));
+    return items.sort((a, b) => {
       const ga = groupOrder.get(a.groupId) ?? 999;
       const gb = groupOrder.get(b.groupId) ?? 999;
       if (ga !== gb) return ga - gb;
-      return b.updatedAt.localeCompare(a.updatedAt);
+      return (b.updatedAt || "").localeCompare(a.updatedAt || "");
     });
   }
 
   create({ title, content, groupId }) {
-    const data = this.load();
+    const meta = this._loadMeta();
     const now = new Date().toISOString();
-    const effectiveGroupId = groupId || (data.groups.length > 0 ? data.groups[0].id : "");
+    const effectiveGroupId = groupId || (meta.groups.length > 0 ? meta.groups[0].id : "");
     const item = {
       id: randomUUID(),
       title: title || "",
@@ -119,27 +196,26 @@ class MemoStorage {
       createdAt: now,
       updatedAt: now
     };
-    data.items.push(item);
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   update({ id, title, content, groupId }) {
-    const data = this.load();
-    const item = data.items.find((i) => i.id === id);
+    const item = this._loadItem(id);
     if (!item) throw new Error(`memo not found: ${id}`);
     if (title !== undefined) item.title = title;
     if (content !== undefined) item.content = content;
     if (groupId !== undefined) item.groupId = groupId;
     item.updatedAt = new Date().toISOString();
-    this.save(data);
+    this._saveItem(item);
     return item;
   }
 
   delete(id) {
-    const data = this.load();
-    data.items = data.items.filter((i) => i.id !== id);
-    this.save(data);
+    const fp = this._itemPath(id);
+    if (fs.existsSync(fp)) {
+      try { fs.unlinkSync(fp); } catch {}
+    }
   }
 }
 

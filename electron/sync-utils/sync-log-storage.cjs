@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
+const { writeAtomic, readJsonSafe } = require("../tools-utils/atomic-json.cjs");
 
 class SyncLogStorage {
   constructor(appDataDir) {
@@ -23,7 +24,7 @@ class SyncLogStorage {
         if (!entry.LogId) entry.LogId = crypto.randomUUID().replace(/-/g, "");
         const detailPath = path.join(this.detailDir, `${entry.LogId}.json`);
         fs.mkdirSync(path.dirname(detailPath), { recursive: true });
-        fs.writeFileSync(detailPath, JSON.stringify(validChanges, null, 2), "utf-8");
+        writeAtomic(detailPath, JSON.stringify(validChanges, null, 2));
       }
       this.append(entry);
     } catch {
@@ -34,9 +35,7 @@ class SyncLogStorage {
   loadDetails(logId) {
     try {
       if (!logId) return [];
-      const p = path.join(this.detailDir, `${logId}.json`);
-      if (!fs.existsSync(p)) return [];
-      return JSON.parse(fs.readFileSync(p, "utf-8")) || [];
+      return readJsonSafe(path.join(this.detailDir, `${logId}.json`)) || [];
     } catch {
       return [];
     }

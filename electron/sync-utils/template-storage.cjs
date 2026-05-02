@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { writeAtomic, writeAtomicWithBackup, readJsonWithBackup } = require("../tools-utils/atomic-json.cjs");
 
 class TemplateStorage {
   constructor(appDataDir) {
@@ -8,8 +9,7 @@ class TemplateStorage {
 
   load() {
     try {
-      if (!fs.existsSync(this.filePath)) return [];
-      return JSON.parse(fs.readFileSync(this.filePath, "utf-8")) || [];
+      return readJsonWithBackup(this.filePath) || [];
     } catch {
       return [];
     }
@@ -17,7 +17,7 @@ class TemplateStorage {
 
   save(templates) {
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-    fs.writeFileSync(this.filePath, JSON.stringify(templates || [], null, 2), "utf-8");
+    writeAtomicWithBackup(this.filePath, JSON.stringify(templates || [], null, 2));
   }
 
   importFromFile(filePath) {
@@ -29,7 +29,8 @@ class TemplateStorage {
 
   exportToFile(filePath, templates) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(templates || [], null, 2), "utf-8");
+    // 用户主动导出的文件，不需要 .bak（在用户选定的目标位置生成）
+    writeAtomic(filePath, JSON.stringify(templates || [], null, 2));
   }
 }
 

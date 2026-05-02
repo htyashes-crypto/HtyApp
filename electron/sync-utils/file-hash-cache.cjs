@@ -2,6 +2,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { buildPathId } = require("./path-id.cjs");
+const { writeAtomic, readJsonSafe } = require("../tools-utils/atomic-json.cjs");
 
 class FileHashCache {
   constructor() {
@@ -19,9 +20,7 @@ function getCachePath(appDataDir, rootPath) {
 function loadCache(appDataDir, rootPath) {
   const cache = new FileHashCache();
   try {
-    const p = getCachePath(appDataDir, rootPath);
-    if (!fs.existsSync(p)) return cache;
-    const raw = JSON.parse(fs.readFileSync(p, "utf-8"));
+    const raw = readJsonSafe(getCachePath(appDataDir, rootPath));
     if (raw && typeof raw === "object") {
       for (const [key, val] of Object.entries(raw)) {
         cache.entries.set(key.toLowerCase(), val);
@@ -45,7 +44,8 @@ function saveCache(appDataDir, rootPath, cache) {
 
     const obj = {};
     for (const [k, v] of cache.entries) obj[k] = v;
-    fs.writeFileSync(p, JSON.stringify(obj), "utf-8");
+    // 缓存数据丢失可重建，不需要 .bak 备份
+    writeAtomic(p, JSON.stringify(obj));
   } catch { /* ignore */ }
 }
 

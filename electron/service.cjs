@@ -11,6 +11,12 @@ const {
   resolveMergeSessionFile,
   treesEqual
 } = require("./merge-session.cjs");
+const {
+  writeAtomic,
+  writeAtomicWithBackup,
+  readJsonSafe,
+  readJsonWithBackup
+} = require("./tools-utils/atomic-json.cjs");
 
 const PROVIDERS = ["codex", "claude", "cursor"];
 const SPECIAL_WORKSPACE_ID = "workspace_special_provider_global";
@@ -135,16 +141,12 @@ class DesktopService {
   }
 
   loadBootstrapConfig() {
-    if (!fs.existsSync(this.bootstrapPath)) {
-      return {};
-    }
-
-    return JSON.parse(fs.readFileSync(this.bootstrapPath, "utf8"));
+    return readJsonWithBackup(this.bootstrapPath) || {};
   }
 
   writeBootstrapConfig(config) {
     ensureDir(path.dirname(this.bootstrapPath));
-    fs.writeFileSync(this.bootstrapPath, JSON.stringify(config, null, 2), "utf8");
+    writeAtomicWithBackup(this.bootstrapPath, JSON.stringify(config, null, 2));
   }
 
   loadLibrary() {
@@ -153,14 +155,20 @@ class DesktopService {
     if (this._libraryCache && stat.mtimeMs === this._libraryCacheMtimeMs) {
       return JSON.parse(JSON.stringify(this._libraryCache));
     }
-    const data = JSON.parse(fs.readFileSync(this.libraryPath, "utf8"));
+    // 主文件损坏时自动从 .bak 回退；都不可用则用初始空结构（不会让用户的所有保存路径报错）
+    const data = readJsonWithBackup(this.libraryPath) || {
+      schemaVersion: 1,
+      workspaces: [],
+      skills: [],
+      activities: []
+    };
     this._libraryCache = data;
     this._libraryCacheMtimeMs = stat.mtimeMs;
     return JSON.parse(JSON.stringify(data));
   }
 
   saveLibrary(data) {
-    fs.writeFileSync(this.libraryPath, JSON.stringify(data, null, 2), "utf8");
+    writeAtomicWithBackup(this.libraryPath, JSON.stringify(data, null, 2));
     this._libraryCache = JSON.parse(JSON.stringify(data));
     this._libraryCacheMtimeMs = fs.statSync(this.libraryPath).mtimeMs;
   }
@@ -1801,7 +1809,9 @@ class DesktopService {
       }
 
       const indexPath = path.join(indexesDir, name);
-      const index = normalizeIndexRecord(JSON.parse(fs.readFileSync(indexPath, "utf8")));
+      const raw = readJsonWithBackup(indexPath);
+      if (!raw) continue; // 单条 index 文件损坏不影响其他 index
+      const index = normalizeIndexRecord(raw);
       indexes.set(indexKey(index.provider, index.relativePath), { indexPath, index });
     }
 
@@ -1810,7 +1820,7 @@ class DesktopService {
 
   writeIndexFile(indexPath, index) {
     ensureDir(path.dirname(indexPath));
-    fs.writeFileSync(indexPath, JSON.stringify(normalizeIndexRecord(index), null, 2), "utf8");
+    writeAtomicWithBackup(indexPath, JSON.stringify(normalizeIndexRecord(index), null, 2));
   }
 
   findIndexByInstanceId(indexesDir, instanceId) {
@@ -1824,7 +1834,9 @@ class DesktopService {
       }
 
       const indexPath = path.join(indexesDir, name);
-      const index = normalizeIndexRecord(JSON.parse(fs.readFileSync(indexPath, "utf8")));
+      const raw = readJsonWithBackup(indexPath);
+      if (!raw) continue;
+      const index = normalizeIndexRecord(raw);
       if (index.instanceId === instanceId) {
         return { indexPath, index };
       }
@@ -1852,7 +1864,7 @@ function ensureLibraryFile(filePath) {
   }
 
   ensureDir(path.dirname(filePath));
-  fs.writeFileSync(
+  writeAtomicWithBackup(
     filePath,
     JSON.stringify(
       {
@@ -1863,8 +1875,7 @@ function ensureLibraryFile(filePath) {
       },
       null,
       2
-    ),
-    "utf8"
+    )
   );
 }
 
